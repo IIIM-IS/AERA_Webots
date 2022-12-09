@@ -1,0 +1,41 @@
+# Ignore files without extensions
+*
+!/**/
+!*.*
+
+# Release folders
+/Release/*
+*/Release/*
+*/*/Release/*
+*/*/*/Release/*
+
+# Debug folders
+/Debug/*
+*/Debug/*
+*/*/Debug/*
+*/*/*/Debug/*
+
+# Visual Studio user files
+*.vs/
+*.user
+*.sdf
+*.suo
+
+# Ignore log files
+*.log
+/AERA/decompiled.txt
+/AERA/runtime_out.txt
+/AERA/decompiled_objects.txt
+/AERA/cart.out
+
+# Webots files
+*.exe
+*.o
+*.d
+*.obj
+*.iobj
+*.pdb
+*.ipdb
+
+# dlls
+*.dll
