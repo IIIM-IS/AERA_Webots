@@ -227,7 +227,7 @@ namespace tcp_io_device {
       for (auto it = data.begin(); it != data.end(); ++it) {
         char data_char[sizeof(T)];
         memcpy(data_char, &(*it), meta_data_.type_size_);
-        data_string.append(data_char);
+        data_string.append(std::string(data_char, sizeof(T)));
       }
       setData(data_string);
     }
