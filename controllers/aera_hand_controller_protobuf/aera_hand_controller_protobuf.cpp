@@ -28,8 +28,6 @@ void run(Robot* robot, int timestep) {
 int main(int argc, char **argv) {
 
   std::cout << "Starting HandGrabSphereController" << std::endl;
-  //webots::Supervisor* robot = new Supervisor();
-  std::cout << "Starting HandGrabSphereController" << std::endl;
   HandGrabSphereController controller = HandGrabSphereController();
   int err = controller.startConnection();
   if (err != 0) {
