@@ -1,5 +1,7 @@
 #include "hand_grab_sphere_controller.h"
 
+#define DEBUG 1
+
 HandGrabSphereController::HandGrabSphereController() : AERAController() {
 
   robot_ = new webots::Supervisor();
@@ -95,7 +97,9 @@ void HandGrabSphereController::init() {
 
 void HandGrabSphereController::run() {
   int aera_us = 0;
+#ifdef DEBUG
   diagnostic_mode_ = false;
+#endif // DEBUG
   int receive_deadline = MAXINT;
   while (robot_->step(robot_time_step_) != -1) {
     if (!aera_started_) {
