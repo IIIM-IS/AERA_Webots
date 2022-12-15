@@ -47,6 +47,8 @@ void AERAController::fillIdStringMaps(std::vector<std::string> names) {
 
 void AERAController::sendSetupMessage(std::vector<tcp_io_device::MetaData> objects, std::vector<tcp_io_device::MetaData> commands)
 {
+  objects_meta_data_ = objects;
+  commands_meta_data_ = commands;
   // Create a new setup message
   std::unique_ptr<tcp_io_device::TCPMessage> msg = std::make_unique<tcp_io_device::TCPMessage>();
   msg->set_messagetype(tcp_io_device::TCPMessage::SETUP);
@@ -127,6 +129,6 @@ void AERAController::sendDataMessage(std::vector<tcp_io_device::MsgData> msg_dat
 
 
 
-template tcp_io_device::MsgData AERAController::createMsgData<int>(tcp_io_device::MetaData meta_data, std::vector<int> data);
+template tcp_io_device::MsgData AERAController::createMsgData<int64_t>(tcp_io_device::MetaData meta_data, std::vector<int64_t> data);
 template tcp_io_device::MsgData AERAController::createMsgData<double>(tcp_io_device::MetaData meta_data, std::vector<double> data);
 template tcp_io_device::MsgData AERAController::createMsgData<std::string>(tcp_io_device::MetaData meta_data, std::vector<std::string> data);
