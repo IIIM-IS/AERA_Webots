@@ -32,6 +32,8 @@ protected:
   int id_counter_;
   std::map<int, std::string> id_string_mapping_;
   std::map<std::string, int> string_id_mapping_;
+  std::vector<tcp_io_device::MetaData> objects_meta_data_;
+  std::vector<tcp_io_device::MetaData> commands_meta_data_;
 
   std::shared_ptr<tcp_io_device::SafeQueue> receive_queue_;
   std::shared_ptr<tcp_io_device::SafeQueue> send_queue_;
