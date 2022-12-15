@@ -5,8 +5,15 @@ HandGrabSphereController::HandGrabSphereController() : AERAController() {
   robot_ = new webots::Supervisor();
   robot_time_step_ = (int)robot_->getBasicTimeStep();
   std::cout << "Timestep: " << robot_time_step_ << std::endl;
-  sphere_ = ((webots::Supervisor*)robot_)->getFromDef("sphere");
-  cube_ = ((webots::Supervisor*)robot_)->getFromDef("cube");
+
+  std::cout << "Getting Sphere, Cube, and Ned from WorldInfo" << std::endl;
+
+  sphere_ = robot_->getFromDef("sphere");
+  cube_ = robot_->getFromDef("cube");
+  ned_robot_arm_ = robot_->getFromDef("Ned");
+
+  ned_robot_arm_x_ = ned_robot_arm_->getField("translation")->getSFVec3f()[0];
+  ned_robot_arm_y_ = ned_robot_arm_->getField("translation")->getSFVec3f()[1];
 
   joint_1_ = robot_->getMotor("joint_1");
   joint_2_ = robot_->getMotor("joint_2");
@@ -31,10 +38,12 @@ int HandGrabSphereController::start() {
   std::cout << "Starting HandGrabSphereController. Initializing entities, objects, and commands" << std::endl;
   std::vector<tcp_io_device::MetaData> objects;
   std::vector<tcp_io_device::MetaData> commands;
-  fillIdStringMaps({ "hand", "cube", "sphere", "position", "grab", "release", "move" });
+  fillIdStringMaps({ "hand", "cube", "sphere", "position", "holding", "grab", "release", "move" });
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_INT64, { 1 }));
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cube"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["sphere"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  
 
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
@@ -42,15 +51,22 @@ int HandGrabSphereController::start() {
 
   sendSetupMessage(objects, commands);
   waitForStartMsg();
+
+  double h_position = getAngularPosition(joint_1_sensor_->getValue());
+  double c_position = getPosition(cube_->getField("translation")->getSFVec3f());
+  double s_position = getPosition(sphere_->getField("translation")->getSFVec3f());
+
   std::vector<tcp_io_device::MsgData> data_to_send;
-  data_to_send.push_back(createMsgData<double>(objects[0], { 0.0 }));
-  data_to_send.push_back(createMsgData<double>(objects[1], { 0.0 }));
-  data_to_send.push_back(createMsgData<double>(objects[2], { 0.0 }));
+  data_to_send.push_back(createMsgData<double>(objects[0], { h_position }));
+  data_to_send.push_back(createMsgData<double>(objects[1], { c_position }));
+  data_to_send.push_back(createMsgData<double>(objects[2], { s_position }));
   sendDataMessage(data_to_send);
+  init();
   run();
 }
 
 void HandGrabSphereController::init() {
+
   // Decrease the PID gain from 10 so that we keep a grip on the object.
   joint_1_->setControlPID(9, 0, 0);
   // Increase the strength of the grip.
@@ -68,11 +84,19 @@ void HandGrabSphereController::init() {
 
   joint_base_to_jaw_1_->setPosition(jaw_open_);
   joint_base_to_jaw_2_->setPosition(jaw_open_);
+
+  sphere_->resetPhysics();
+  cube_->resetPhysics();
+  sphere_->getField("rotation")->setSFRotation(sphere_rotation_);
+  sphere_->getField("translation")->setSFVec3f(sphere_translation_);
+  cube_->getField("rotation")->setSFRotation(cube_rotation_);
+  cube_->getField("translation")->setSFVec3f(cube_translation_);
 }
 
 void HandGrabSphereController::run() {
   int aera_us = 0;
   diagnostic_mode_ = false;
+  int receive_deadline = MAXINT;
   while (robot_->step(robot_time_step_) != -1) {
     if (!aera_started_) {
       std::cout << "AERA not started, wait for start message before calling run()" << std::endl;
@@ -96,19 +120,71 @@ void HandGrabSphereController::run() {
           << ". Ignoring the message..." << std::endl;
       }
     }
-  }
-  if (aera_us % 100'000) {
 
-    double hand_position = joint_1_sensor_->getValue();
-    const double* cube_position = cube_->getPosition();
-    const double* sphere_position = sphere_->getPosition();
-  }
 
-  aera_us += robot_time_step_ * 100;
+    double h_position = getAngularPosition(joint_1_sensor_->getValue());
+
+    if (aera_us % 100'000) {
+      const double* c_translation = cube_->getField("translation")->getSFVec3f();
+      const double* s_translation = sphere_->getField("translation")->getSFVec3f();
+      double c_position = getPosition(c_translation);
+      double s_position = getPosition(s_translation);
+
+      int64_t holding_id = 0;
+      if (fabs(joint_base_to_jaw_1_sensor_->getValue() - jaw_closed_) < 0.0005 &&
+        fabs(joint_base_to_jaw_2_sensor_->getValue() - jaw_closed_)) {
+        // The gripper is in the closed position. Check if an object is at the hand position with elevated Z.
+        if (c_position == h_position && c_translation[2] > 0.0103)
+          holding_id = string_id_mapping_["cube"];
+        if (s_position == h_position && s_translation[2] > 0.0103)
+          holding_id = string_id_mapping_["sphere"];
+      }
+
+      std::vector<tcp_io_device::MsgData> msg_data;
+      for (auto it = objects_meta_data_.begin(); it != objects_meta_data_.end(); ++it) {
+        if (id_string_mapping_[it->getEntityID()] == "cube" && id_string_mapping_[it->getID()] == "position")
+        {
+          msg_data.push_back(createMsgData<double>(*it, { c_position }));
+          continue;
+        }
+        if (id_string_mapping_[it->getEntityID()] == "sphere" && id_string_mapping_[it->getID()] == "position")
+        {
+          msg_data.push_back(createMsgData<double>(*it, { s_position }));
+          continue;
+        }
+        if (id_string_mapping_[it->getEntityID()] == "hand" && id_string_mapping_[it->getID()] == "position")
+        {
+          msg_data.push_back(createMsgData<double>(*it, { h_position }));
+          continue;
+        }
+        if (id_string_mapping_[it->getEntityID()] == "hand" && id_string_mapping_[it->getID()] == "holding")
+        {
+          msg_data.push_back(createMsgData<int64_t>(*it, { holding_id }));
+          continue;
+        }
+      }
+      sendDataMessage(msg_data);
+
+      receive_deadline = aera_us + 65000;
+    }
+
+    aera_us += robot_time_step_ * 100;
+  }
 }
 
-double absolutePositionToRelativeAngle(const double* absolute_position, const double* relative_view_point) {
+double HandGrabSphereController::getPosition(const double* translation) {
 
+  double offset_x = translation[0] - ned_robot_arm_x_;
+  double offset_y = translation[1] - ned_robot_arm_y_;
+  double angle = atan2(offset_x, -offset_y);
+
+  return getAngularPosition(angle);
+}
+
+double HandGrabSphereController::getAngularPosition(double angle) {
+  double position = angle / position_factor_ - position_offset_;
+  // Quantize.
+  return floor((position + bin_size_ / 2) / bin_size_) * bin_size_;
 }
 
 void HandGrabSphereController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) {
