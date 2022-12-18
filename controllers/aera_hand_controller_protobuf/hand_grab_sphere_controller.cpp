@@ -40,16 +40,16 @@ int HandGrabSphereController::start() {
   std::cout << "Starting HandGrabSphereController. Initializing entities, objects, and commands" << std::endl;
   std::vector<tcp_io_device::MetaData> objects;
   std::vector<tcp_io_device::MetaData> commands;
-  fillIdStringMaps({ "hand", "cube", "sphere", "position", "holding", "grab", "release", "move" });
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_INT64, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cube"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["sphere"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  fillIdStringMaps({ "h", "c", "s", "position", "holding", "grab", "release", "move" });
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_INT64, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["c"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["s"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
   
 
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["hand"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
 
   sendSetupMessage(objects, commands);
   waitForStartMsg();
@@ -98,7 +98,7 @@ void HandGrabSphereController::init() {
 void HandGrabSphereController::run() {
   int aera_us = 0;
 #ifdef DEBUG
-  diagnostic_mode_ = false;
+  diagnostic_mode_ = true;
 #endif // DEBUG
   int receive_deadline = MAXINT;
   while (robot_->step(robot_time_step_) != -1) {
@@ -107,7 +107,7 @@ void HandGrabSphereController::run() {
       break;
     }
     auto msg = receive_queue_->dequeue();
-    if (!msg && diagnostic_mode_)
+    if (!msg && diagnostic_mode_ && aera_us >= receive_deadline)
     {
       while (!msg)
       {
@@ -115,6 +115,7 @@ void HandGrabSphereController::run() {
       }
     }
     if (msg) {
+      receive_deadline = MAXINT;
       if (msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
         handleDataMsg(dataMsgToMsgData(std::move(msg)));
       }
@@ -128,7 +129,8 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
-    if (aera_us % 100'000) {
+    // Don't send the state at time 0, but wait for the initial position.
+    if (aera_us > 0 && aera_us % 100'000 == 0) {
       const double* c_translation = cube_->getField("translation")->getSFVec3f();
       const double* s_translation = sphere_->getField("translation")->getSFVec3f();
       double c_position = getPosition(c_translation);
@@ -139,29 +141,29 @@ void HandGrabSphereController::run() {
         fabs(joint_base_to_jaw_2_sensor_->getValue() - jaw_closed_)) {
         // The gripper is in the closed position. Check if an object is at the hand position with elevated Z.
         if (c_position == h_position && c_translation[2] > 0.0103)
-          holding_id = string_id_mapping_["cube"];
+          holding_id = string_id_mapping_["c"];
         if (s_position == h_position && s_translation[2] > 0.0103)
-          holding_id = string_id_mapping_["sphere"];
+          holding_id = string_id_mapping_["s"];
       }
 
       std::vector<tcp_io_device::MsgData> msg_data;
       for (auto it = objects_meta_data_.begin(); it != objects_meta_data_.end(); ++it) {
-        if (id_string_mapping_[it->getEntityID()] == "cube" && id_string_mapping_[it->getID()] == "position")
+        if (id_string_mapping_[it->getEntityID()] == "c" && id_string_mapping_[it->getID()] == "position")
         {
           msg_data.push_back(createMsgData<double>(*it, { c_position }));
           continue;
         }
-        if (id_string_mapping_[it->getEntityID()] == "sphere" && id_string_mapping_[it->getID()] == "position")
+        if (id_string_mapping_[it->getEntityID()] == "s" && id_string_mapping_[it->getID()] == "position")
         {
           msg_data.push_back(createMsgData<double>(*it, { s_position }));
           continue;
         }
-        if (id_string_mapping_[it->getEntityID()] == "hand" && id_string_mapping_[it->getID()] == "position")
+        if (id_string_mapping_[it->getEntityID()] == "h" && id_string_mapping_[it->getID()] == "position")
         {
           msg_data.push_back(createMsgData<double>(*it, { h_position }));
           continue;
         }
-        if (id_string_mapping_[it->getEntityID()] == "hand" && id_string_mapping_[it->getID()] == "holding")
+        if (id_string_mapping_[it->getEntityID()] == "h" && id_string_mapping_[it->getID()] == "holding")
         {
           msg_data.push_back(createMsgData<int64_t>(*it, { holding_id }));
           continue;
