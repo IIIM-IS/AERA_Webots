@@ -255,16 +255,18 @@ namespace tcp_io_device {
     template <typename T> std::vector<T> getData() {
       T a;
       std::vector<T> values;
-      // If it is a string just return the data object in the first position of the vector.
-      if (meta_data_.type_ == VariableDescription_DataType_STRING) {
-        values.push_back(data_);
-        return values;
-      }
       for (int i = 0; i < meta_data_.data_size_; i += meta_data_.type_size_) {
         char* pos = &data_[i];
         memcpy(&a, pos, meta_data_.type_size_);
         values.push_back(a);
       }
+      return values;
+    }
+
+    template<>
+    std::vector<std::string> getData() {
+      std::vector<std::string> values;
+      values.push_back(data_);
       return values;
     }
 
