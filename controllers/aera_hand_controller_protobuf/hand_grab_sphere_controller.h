@@ -24,6 +24,10 @@ protected:
 
 private:
 
+  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, CLOSE_GRIPPER, OPEN_GRIPPER, STOPPING };
+
+  State state_;
+
   double ned_robot_arm_x_;
   double ned_robot_arm_y_;
 
@@ -41,6 +45,10 @@ private:
   const double cube_rotation_[4] = { 0, 0, -1, 1.00257 };
   const double cube_translation_[3] = { -0.257, -0.161, 0.01 };
 
+  const double position_accuracy_error_ = 0.001;
+
+  double target_h_position_;
+
   webots::Motor* joint_1_;
   webots::Motor* joint_2_;
   webots::Motor* joint_3_;
@@ -51,8 +59,11 @@ private:
   webots::Motor* joint_base_to_jaw_2_;
 
   webots::PositionSensor* joint_1_sensor_;
+  webots::PositionSensor* joint_2_sensor_;
   webots::PositionSensor* joint_base_to_jaw_1_sensor_;
   webots::PositionSensor* joint_base_to_jaw_2_sensor_;
+
+  void executeCommand();
 
   double getPosition(const double* translation);
 

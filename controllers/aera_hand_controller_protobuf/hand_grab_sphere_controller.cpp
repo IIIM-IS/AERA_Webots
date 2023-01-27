@@ -4,6 +4,8 @@
 
 HandGrabSphereController::HandGrabSphereController() : AERAController() {
 
+  state_ = STARTING;
+
   robot_ = new webots::Supervisor();
   robot_time_step_ = (int)robot_->getBasicTimeStep();
   std::cout << "Timestep: " << robot_time_step_ << std::endl;
@@ -26,6 +28,7 @@ HandGrabSphereController::HandGrabSphereController() : AERAController() {
   joint_base_to_jaw_2_ = robot_->getMotor("joint_base_to_jaw_2");
 
   joint_1_sensor_ = robot_->getPositionSensor("joint_1_sensor");
+  joint_2_sensor_ = robot_->getPositionSensor("joint_2_sensor");
   joint_base_to_jaw_1_sensor_ = robot_->getPositionSensor("joint_base_to_jaw_1_sensor");
   joint_base_to_jaw_2_sensor_ = robot_->getPositionSensor("joint_base_to_jaw_2_sensor");
 }
@@ -64,6 +67,7 @@ int HandGrabSphereController::start() {
   data_to_send.push_back(createMsgData<double>(objects[2], { s_position }));
   sendDataMessage(data_to_send);
   init();
+  state_ = IDLE;
   run();
 }
 
@@ -76,6 +80,7 @@ void HandGrabSphereController::init() {
   joint_base_to_jaw_2_->setControlPID(250, 0, 0);
 
   joint_1_sensor_->enable(robot_time_step_);
+  joint_2_sensor_->enable(robot_time_step_);
   joint_base_to_jaw_1_sensor_->enable(robot_time_step_);
   joint_base_to_jaw_2_sensor_->enable(robot_time_step_);
 
@@ -173,9 +178,71 @@ void HandGrabSphereController::run() {
 
       receive_deadline = aera_us + 65000;
     }
-
+    executeCommand();
     aera_us += robot_time_step_ * 100;
   }
+}
+
+#include <chrono>
+#include <thread>
+
+
+void HandGrabSphereController::executeCommand() {
+  double joint_1_pos = joint_1_sensor_->getValue();
+  switch (state_)
+  {
+  case STARTING:
+  case IDLE:
+  case STOPPING:
+    return;
+  case MOVE_DOWN_CLOSE:
+    std::cout << "Moving arm down to position " << arm_down_ << std::endl;
+    joint_2_->setPosition(arm_down_);
+    std::cout << "Diff arm_down, sensor value: " << arm_down_ - joint_2_sensor_->getValue() << std::endl;
+    if (arm_down_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+      state_ = CLOSE_GRIPPER;
+    }
+    return;
+  case MOVE_DOWN_OPEN:
+    std::cout << "Moving arm down to position " << arm_down_ << std::endl;
+    joint_2_->setPosition(arm_down_);
+    std::cout << "Diff arm_down, sensor value: " << arm_down_ - joint_2_sensor_->getValue() << std::endl;
+    if (arm_down_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+      state_ = OPEN_GRIPPER;
+    }
+    return;
+  case MOVE_UP:
+    joint_2_->setPosition(arm_up_);
+    if (arm_up_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+      state_ = IDLE;
+    }
+    return;
+  case MOVE_ARM:
+    std::cout << "Joint 1 Sensor value: " << joint_1_pos << std::endl;
+    std::cout << "Joint 1 target value: " << joint_1_pos + (target_h_position_ * position_factor_) << std::endl;
+    joint_1_->setPosition(joint_1_pos + (target_h_position_ * position_factor_));
+    state_ = IDLE;
+    return;
+  case CLOSE_GRIPPER:
+    joint_base_to_jaw_1_->setPosition(jaw_closed_);
+    joint_base_to_jaw_2_->setPosition(jaw_closed_);
+    if (jaw_closed_ - joint_base_to_jaw_1_sensor_->getValue() <= position_accuracy_error_ &&
+      jaw_closed_ - joint_base_to_jaw_2_sensor_->getValue() <= position_accuracy_error_) {
+      state_ = MOVE_UP;
+    }
+    return;
+  case OPEN_GRIPPER:
+    joint_base_to_jaw_1_->setPosition(jaw_open_);
+    joint_base_to_jaw_2_->setPosition(jaw_open_);
+    if (jaw_open_ - joint_base_to_jaw_1_sensor_->getValue() <= position_accuracy_error_ &&
+      jaw_open_ - joint_base_to_jaw_2_sensor_->getValue() <= position_accuracy_error_) {
+      state_ = MOVE_UP;
+    }
+    return;
+  default:
+    return;
+  }
+
 }
 
 double HandGrabSphereController::getPosition(const double* translation) {
@@ -194,5 +261,29 @@ double HandGrabSphereController::getAngularPosition(double angle) {
 }
 
 void HandGrabSphereController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) {
+  std::cout << "Received message with the following objects:" << std::endl;
+  for (auto it = msg_data.begin(); it != msg_data.end(); ++it) {
+    std::string id_name = id_string_mapping_[it->getMetaData().getID()];
+    std::string entity_name = id_string_mapping_[it->getMetaData().getEntityID()];
+    std::cout << "Entity: " + entity_name + " Property: " + id_name << std::endl;
 
+    if (entity_name != "h") {
+      // Unknown command
+      continue;
+    }
+    if (id_name == "grab")
+    {
+      state_ = MOVE_DOWN_CLOSE;
+    }
+    else if (id_name == "release")
+    {
+      state_ = MOVE_DOWN_OPEN;
+    }
+    else if (id_name == "move")
+    {
+      target_h_position_ = it->getData<double>()[0];
+      std::cout << "Moving arm to " << target_h_position_ << std::endl;
+      state_ = MOVE_ARM;
+    }
+  }
 }

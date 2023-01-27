@@ -53,7 +53,7 @@ protected:
   virtual void run() = 0;
 
   static std::vector<tcp_io_device::MsgData> dataMsgToMsgData(std::unique_ptr<tcp_io_device::TCPMessage> msg) {
-    static std::vector<tcp_io_device::MsgData> out_vec;
+    std::vector<tcp_io_device::MsgData> out_vec;
     auto variables = msg->datamessage().variables();
     for (auto var = variables.begin(); var != variables.end(); ++var) {
       out_vec.push_back(tcp_io_device::MsgData(&(*var)));
