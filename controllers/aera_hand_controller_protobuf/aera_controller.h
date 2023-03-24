@@ -11,6 +11,8 @@
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
 
+using communication_id_t = int64_t;
+
 class AERAController
 {
 public:
