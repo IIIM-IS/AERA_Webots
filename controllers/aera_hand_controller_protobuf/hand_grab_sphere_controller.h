@@ -46,6 +46,7 @@ private:
   const double cube_translation_[3] = { -0.257, -0.161, 0.01 };
 
   const double position_accuracy_error_ = 0.001;
+  const double gripper_accuracy_error_ = 0.0005;
 
   double target_h_position_;
 
@@ -60,6 +61,9 @@ private:
 
   webots::PositionSensor* joint_1_sensor_;
   webots::PositionSensor* joint_2_sensor_;
+  webots::PositionSensor* joint_3_sensor_;
+  webots::PositionSensor* joint_5_sensor_;
+  webots::PositionSensor* joint_6_sensor_;
   webots::PositionSensor* joint_base_to_jaw_1_sensor_;
   webots::PositionSensor* joint_base_to_jaw_2_sensor_;
 
