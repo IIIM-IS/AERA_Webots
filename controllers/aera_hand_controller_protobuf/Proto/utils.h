@@ -158,6 +158,9 @@ namespace tcp_io_device {
       case 3:
         type_size_ = 8;
         break;
+      case 15:
+        type_size_ = 8;
+        break;
       default:
         type_size_ = 1;
         break;
@@ -226,7 +229,7 @@ namespace tcp_io_device {
       std::string data_string;
       for (auto it = data.begin(); it != data.end(); ++it) {
         char data_char[sizeof(T)];
-        memcpy(data_char, &(*it), meta_data_.type_size_);
+        memcpy(data_char, &(*it), sizeof(T));
         data_string.append(std::string(data_char, sizeof(T)));
       }
       setData(data_string);
