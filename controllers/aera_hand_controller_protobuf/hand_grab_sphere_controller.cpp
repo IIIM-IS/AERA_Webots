@@ -29,6 +29,9 @@ HandGrabSphereController::HandGrabSphereController() : AERAController() {
 
   joint_1_sensor_ = robot_->getPositionSensor("joint_1_sensor");
   joint_2_sensor_ = robot_->getPositionSensor("joint_2_sensor");
+  joint_3_sensor_ = robot_->getPositionSensor("joint_3_sensor");
+  joint_5_sensor_ = robot_->getPositionSensor("joint_5_sensor");
+  joint_6_sensor_ = robot_->getPositionSensor("joint_6_sensor");
   joint_base_to_jaw_1_sensor_ = robot_->getPositionSensor("joint_base_to_jaw_1_sensor");
   joint_base_to_jaw_2_sensor_ = robot_->getPositionSensor("joint_base_to_jaw_2_sensor");
 }
@@ -45,7 +48,7 @@ int HandGrabSphereController::start() {
   std::vector<tcp_io_device::MetaData> commands;
   fillIdStringMaps({ "h", "c", "s", "position", "holding", "grab", "release", "move" });
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_INT64, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["c"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["s"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
   
@@ -57,16 +60,23 @@ int HandGrabSphereController::start() {
   sendSetupMessage(objects, commands);
   waitForStartMsg();
 
+  init();
+
   double h_position = getAngularPosition(joint_1_sensor_->getValue());
   double c_position = getPosition(cube_->getField("translation")->getSFVec3f());
   double s_position = getPosition(sphere_->getField("translation")->getSFVec3f());
 
+  std::cout << "Sending initial data message with following data:" << std::endl;
+  std::cout << "Hand Position: " << h_position << std::endl;
+  std::cout << "Cube Position: " << c_position << std::endl;
+  std::cout << "Sphere Position: " << s_position << std::endl;
+
   std::vector<tcp_io_device::MsgData> data_to_send;
-  data_to_send.push_back(createMsgData<double>(objects[0], { h_position }));
-  data_to_send.push_back(createMsgData<double>(objects[1], { c_position }));
-  data_to_send.push_back(createMsgData<double>(objects[2], { s_position }));
+  data_to_send.push_back(createMsgData<double>(objects[0], { 25 }));
+  data_to_send.push_back(createMsgData<communication_id_t>(objects[1], { -1 }));
+  data_to_send.push_back(createMsgData<double>(objects[2], { c_position }));
+  data_to_send.push_back(createMsgData<double>(objects[3], { s_position }));
   sendDataMessage(data_to_send);
-  init();
   state_ = IDLE;
   run();
 }
@@ -84,6 +94,7 @@ void HandGrabSphereController::init() {
   joint_base_to_jaw_1_sensor_->enable(robot_time_step_);
   joint_base_to_jaw_2_sensor_->enable(robot_time_step_);
 
+  joint_1_->setPosition((0 + position_offset_) * position_factor_);
   joint_2_->setPosition(arm_up_);
   joint_3_->setPosition(0.32);
   joint_5_->setPosition(-0.5);
@@ -134,6 +145,9 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
+    if (aera_us == 1700 * 1000 + 65000) {
+      //reset
+    }
     // Don't send the state at time 0, but wait for the initial position.
     if (aera_us > 0 && aera_us % 100'000 == 0) {
       const double* c_translation = cube_->getField("translation")->getSFVec3f();
@@ -141,15 +155,20 @@ void HandGrabSphereController::run() {
       double c_position = getPosition(c_translation);
       double s_position = getPosition(s_translation);
 
-      int64_t holding_id = 0;
+      communication_id_t holding_id = -1;
       if (fabs(joint_base_to_jaw_1_sensor_->getValue() - jaw_closed_) < 0.0005 &&
         fabs(joint_base_to_jaw_2_sensor_->getValue() - jaw_closed_)) {
         // The gripper is in the closed position. Check if an object is at the hand position with elevated Z.
+        std::cout << "Hand Position: " << h_position << std::endl;
+        std::cout << "Cube Position: " << c_position << std::endl;
+        std::cout << "Sphere Position: " << s_position << std::endl;
         if (c_position == h_position && c_translation[2] > 0.0103)
           holding_id = string_id_mapping_["c"];
         if (s_position == h_position && s_translation[2] > 0.0103)
           holding_id = string_id_mapping_["s"];
       }
+
+      std::cout << "Holding: " << holding_id << std::endl;
 
       std::vector<tcp_io_device::MsgData> msg_data;
       for (auto it = objects_meta_data_.begin(); it != objects_meta_data_.end(); ++it) {
@@ -170,7 +189,7 @@ void HandGrabSphereController::run() {
         }
         if (id_string_mapping_[it->getEntityID()] == "h" && id_string_mapping_[it->getID()] == "holding")
         {
-          msg_data.push_back(createMsgData<int64_t>(*it, { holding_id }));
+          msg_data.push_back(createMsgData<communication_id_t>(*it, { holding_id }));
           continue;
         }
       }
@@ -183,10 +202,6 @@ void HandGrabSphereController::run() {
   }
 }
 
-#include <chrono>
-#include <thread>
-
-
 void HandGrabSphereController::executeCommand() {
   double joint_1_pos = joint_1_sensor_->getValue();
   switch (state_)
@@ -196,46 +211,40 @@ void HandGrabSphereController::executeCommand() {
   case STOPPING:
     return;
   case MOVE_DOWN_CLOSE:
-    std::cout << "Moving arm down to position " << arm_down_ << std::endl;
     joint_2_->setPosition(arm_down_);
-    std::cout << "Diff arm_down, sensor value: " << arm_down_ - joint_2_sensor_->getValue() << std::endl;
-    if (arm_down_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+    if (abs(arm_down_ - joint_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = CLOSE_GRIPPER;
     }
     return;
   case MOVE_DOWN_OPEN:
-    std::cout << "Moving arm down to position " << arm_down_ << std::endl;
     joint_2_->setPosition(arm_down_);
-    std::cout << "Diff arm_down, sensor value: " << arm_down_ - joint_2_sensor_->getValue() << std::endl;
-    if (arm_down_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+    if (abs(arm_down_ - joint_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = OPEN_GRIPPER;
     }
     return;
   case MOVE_UP:
     joint_2_->setPosition(arm_up_);
-    if (arm_up_ - joint_2_sensor_->getValue() <= position_accuracy_error_) {
+    if (abs(arm_up_ - joint_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = IDLE;
     }
     return;
   case MOVE_ARM:
-    std::cout << "Joint 1 Sensor value: " << joint_1_pos << std::endl;
-    std::cout << "Joint 1 target value: " << joint_1_pos + (target_h_position_ * position_factor_) << std::endl;
     joint_1_->setPosition(joint_1_pos + (target_h_position_ * position_factor_));
     state_ = IDLE;
     return;
   case CLOSE_GRIPPER:
     joint_base_to_jaw_1_->setPosition(jaw_closed_);
     joint_base_to_jaw_2_->setPosition(jaw_closed_);
-    if (jaw_closed_ - joint_base_to_jaw_1_sensor_->getValue() <= position_accuracy_error_ &&
-      jaw_closed_ - joint_base_to_jaw_2_sensor_->getValue() <= position_accuracy_error_) {
+    if (abs(jaw_closed_ - joint_base_to_jaw_1_sensor_->getValue()) <= position_accuracy_error_ &&
+      abs(jaw_closed_ - joint_base_to_jaw_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = MOVE_UP;
     }
     return;
   case OPEN_GRIPPER:
     joint_base_to_jaw_1_->setPosition(jaw_open_);
     joint_base_to_jaw_2_->setPosition(jaw_open_);
-    if (jaw_open_ - joint_base_to_jaw_1_sensor_->getValue() <= position_accuracy_error_ &&
-      jaw_open_ - joint_base_to_jaw_2_sensor_->getValue() <= position_accuracy_error_) {
+    if (abs(jaw_open_ - joint_base_to_jaw_1_sensor_->getValue()) <= position_accuracy_error_ &&
+      abs(jaw_open_ - joint_base_to_jaw_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = MOVE_UP;
     }
     return;
