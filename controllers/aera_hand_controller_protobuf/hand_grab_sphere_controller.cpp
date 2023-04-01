@@ -94,7 +94,7 @@ void HandGrabSphereController::init() {
   joint_base_to_jaw_1_sensor_->enable(robot_time_step_);
   joint_base_to_jaw_2_sensor_->enable(robot_time_step_);
 
-  joint_1_->setPosition((0 + position_offset_) * position_factor_);
+  joint_1_->setPosition((15 + position_offset_) * position_factor_);
   joint_2_->setPosition(arm_up_);
   joint_3_->setPosition(0.32);
   joint_5_->setPosition(-0.5);
