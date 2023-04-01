@@ -145,8 +145,9 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
-    if (aera_us == 1700 * 1000 + 65000) {
+    if (aera_us == 1700 * 1000 + 40000) {
       //reset
+      init();
     }
     // Don't send the state at time 0, but wait for the initial position.
     if (aera_us > 0 && aera_us % 100'000 == 0) {
