@@ -41,7 +41,7 @@ private:
   const double jaw_closed_ = -0.0019;
 
   const double sphere_rotation_[4] = { 0, 0, 1, 1.50014 };
-  const double sphere_translation_[3] = { -0.3, -0.025, 0.01 };
+  const double sphere_translation_[3] = { -0.3, -0.02, 0.01 };
   const double cube_rotation_[4] = { 0, 0, -1, 1.00257 };
   const double cube_translation_[3] = { -0.257, -0.161, 0.01 };
 
