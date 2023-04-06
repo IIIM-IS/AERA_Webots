@@ -96,7 +96,7 @@ void HandGrabSphereController::init() {
   joint_base_to_jaw_1_sensor_->enable(robot_time_step_);
   joint_base_to_jaw_2_sensor_->enable(robot_time_step_);
 
-  joint_1_->setPosition((0 + position_offset_) * position_factor_);
+  joint_1_->setPosition((15 + position_offset_) * position_factor_);
   joint_2_->setPosition(arm_up_);
   joint_3_->setPosition(0.32);
   joint_5_->setPosition(-0.5);
@@ -147,8 +147,9 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
-    if (aera_us == 1700 * 1000 + 65000) {
+    if (aera_us == 1700 * 1000 + 40000) {
       //reset
+      init();
     }
     // Don't send the state at time 0, but wait for the initial position.
     if (aera_us > 0 && aera_us % 100'000 == 0) {
@@ -164,9 +165,9 @@ void HandGrabSphereController::run() {
         std::cout << "Hand Position: " << h_position << std::endl;
         std::cout << "Cube Position: " << c_position << std::endl;
         std::cout << "Sphere Position: " << s_position << std::endl;
-        if (c_position == h_position && c_translation[2] > 0.0103)
+        if (c_position == h_position && c_translation[2] > 0.01045)
           holding_id = string_id_mapping_["c"];
-        if (s_position == h_position && s_translation[2] > 0.0103)
+        if (s_position == h_position && s_translation[2] > 0.01045)
           holding_id = string_id_mapping_["s"];
       }
 
