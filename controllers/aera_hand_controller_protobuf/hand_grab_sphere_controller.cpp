@@ -61,6 +61,8 @@ int HandGrabSphereController::start() {
   waitForStartMsg();
 
   init();
+  // Step once to initialize joint sensors.
+  robot_->step(robot_time_step_);
 
   double h_position = getAngularPosition(joint_1_sensor_->getValue());
   double c_position = getPosition(cube_->getField("translation")->getSFVec3f());
@@ -72,7 +74,7 @@ int HandGrabSphereController::start() {
   std::cout << "Sphere Position: " << s_position << std::endl;
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-  data_to_send.push_back(createMsgData<double>(objects[0], { 25 }));
+  data_to_send.push_back(createMsgData<double>(objects[0], { h_position }));
   data_to_send.push_back(createMsgData<communication_id_t>(objects[1], { -1 }));
   data_to_send.push_back(createMsgData<double>(objects[2], { c_position }));
   data_to_send.push_back(createMsgData<double>(objects[3], { s_position }));
