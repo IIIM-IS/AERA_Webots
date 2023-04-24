@@ -3,13 +3,21 @@
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/RectangleArena.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/robots/niryo/ned/protos/Ned.proto"
+EXTERNPROTO "../protos/Ned.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/appearances/protos/Parquetry.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/factory/containers/protos/WoodenBox.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/solids/protos/SolidRoundedBox.proto"
 
 WorldInfo {
   basicTimeStep 1
+  contactProperties [
+    ContactProperties {
+      material1 "jaw_material"
+      coulombFriction [
+        2
+      ]
+    }
+  ]
 }
 Viewpoint {
   orientation -0.18956293197229523 0.18604373487739922 0.9640817514790616 1.6261033403259013
@@ -54,35 +62,19 @@ DEF Ned Ned {
   hidden position_0_0 -7.08747777728292e-08
   hidden rotation_1 0 0 -1 7.300048299977715e-08
   hidden position_1_0 0.649959016830123
-  hidden linearVelocity_1 -1.7854938763919694e-09 -1.9268448230032577e-08 3.562661706237055e-10
-  hidden angularVelocity_1 -1.1803076442621234e-10 2.796569084973613e-10 -6.375990747377677e-07
   hidden rotation_2 -0.30413925818873905 -0.9026911462285513 0.30438134987050025 1.6722005796587414
   hidden position_2_0 0.31997951131197766
-  hidden linearVelocity_2 -1.6807584332763313e-08 -4.0050929932961e-05 -2.9686506409957805e-05
-  hidden angularVelocity_2 0.00042797211502974234 -6.998115317834413e-10 -2.9644921598329995e-07
   hidden rotation_3 0 0 1 0.3199795113119776
   hidden position_3_0 1.0646137902370988e-08
-  hidden linearVelocity_3 -3.9919861005089134e-08 -6.283795991836614e-05 -7.424170438670571e-05
-  hidden angularVelocity_3 0.0006386655060772375 -1.4294710870498123e-09 -1.2845530272539412e-07
-  hidden rotation_4 -0.5775032328039387 -0.5775032266557555 -0.5770442264707195 2.0934749938567108
+  hidden rotation_4 -0.5775032328039386 -0.5775032266557557 -0.5770442264707195 2.0934749938567108
   hidden position_4_0 -0.49996740897862324
-  hidden linearVelocity_4 -5.04001361819621e-08 -4.95041477939885e-06 -0.00013200597016020218
-  hidden angularVelocity_4 0.0006386654511047576 2.3628506650725486e-09 -1.2260990985285455e-07
-  hidden rotation_5 0.23979568431147674 -0.9407421990592524 -0.23979604812163274 1.631844028888602
+  hidden rotation_5 0.23979568431147671 -0.9407421990592525 -0.23979604812163277 1.631844028888602
   hidden position_5_0 1.5706491131024696
-  hidden linearVelocity_5 -6.096332438763835e-08 1.9021418833728624e-05 -0.0001577530327404264
-  hidden angularVelocity_5 0.0009678892282875589 -2.1440533303239696e-07 2.8834641426187006e-07
-  hidden rotation_6 0.5771688330497496 0.5772536175686829 0.5776282534293654 2.093850367038399
-  hidden linearVelocity_6 1.7031102807736755e-06 6.500991770734967e-05 -0.0001714775510848925
-  hidden angularVelocity_6 0.0009683320086885688 -0.0001179102591814604 -0.001162325347535848
+  hidden rotation_6 0.5771688330497496 0.577253617568683 0.5776282534293652 2.0938503670383986
   hidden position_7_0 0.009000000268307128
   hidden position_7_1 0.008999999731948524
   hidden translation_8 0.01455 -0.024400036000001075 0.018614000268235127
-  hidden linearVelocity_8 2.9574355535930522e-05 9.033229823098952e-05 -0.00015082685137849186
-  hidden angularVelocity_8 0.0009683320086918798 -0.0001179102593461565 -0.0011623253477688338
   hidden translation_9 0.01455 -0.024399964000001075 -0.020065999731876526
-  hidden linearVelocity_9 -3.1361329621975426e-05 8.519537164676311e-05 -0.00020107120246503883
-  hidden angularVelocity_9 0.0009683320085446333 -0.00011791025929939051 -0.0011623253470081489
   translation -0.001 -0.00517642 0
   rotation 0 0 1 3.14159
   controller "aera_hand_controller_protobuf"
