@@ -165,9 +165,9 @@ void HandGrabSphereController::run() {
         std::cout << "Hand Position: " << h_position << std::endl;
         std::cout << "Cube Position: " << c_position << std::endl;
         std::cout << "Sphere Position: " << s_position << std::endl;
-        if (c_position == h_position && c_translation[2] > 0.01045)
+        if (c_position == h_position && c_translation[2] > 0.014)
           holding_id = string_id_mapping_["c"];
-        if (s_position == h_position && s_translation[2] > 0.01045)
+        if (s_position == h_position && s_translation[2] > 0.014)
           holding_id = string_id_mapping_["s"];
       }
 
