@@ -114,7 +114,8 @@ void HandGrabSphereController::init() {
 }
 
 void HandGrabSphereController::run() {
-  int aera_us = 0;
+  // AERA sends the first command at 100ms.
+  int aera_us = 100'000;
 #ifdef DEBUG
   diagnostic_mode_ = true;
 #endif // DEBUG
@@ -147,12 +148,12 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
-    if (aera_us == 1700 * 1000 + 40000) {
+    if (aera_us == 1800 * 1000 + 40000) {
       //reset
       init();
     }
-    // Don't send the state at time 0, but wait for the initial position.
-    if (aera_us > 0 && aera_us % 100'000 == 0) {
+    // Don't send the state on the first pass, but wait to arrive at the initial position.
+    if (aera_us > 100'000 && aera_us % 100'000 == 0) {
       const double* c_translation = cube_->getField("translation")->getSFVec3f();
       const double* s_translation = sphere_->getField("translation")->getSFVec3f();
       double c_position = getPosition(c_translation);
