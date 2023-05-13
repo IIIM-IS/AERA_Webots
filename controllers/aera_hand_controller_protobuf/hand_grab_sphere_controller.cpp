@@ -161,7 +161,7 @@ void HandGrabSphereController::run() {
 
       communication_id_t holding_id = -1;
       if (fabs(joint_base_to_jaw_1_sensor_->getValue() - jaw_closed_) < 0.0005 &&
-        fabs(joint_base_to_jaw_2_sensor_->getValue() - jaw_closed_)) {
+          fabs(joint_base_to_jaw_2_sensor_->getValue() - jaw_closed_) < 0.0005) {
         // The gripper is in the closed position. Check if an object is at the hand position with elevated Z.
         std::cout << "Hand Position: " << h_position << std::endl;
         std::cout << "Cube Position: " << c_position << std::endl;
@@ -295,7 +295,7 @@ void HandGrabSphereController::handleDataMsg(std::vector<tcp_io_device::MsgData>
     else if (id_name == "move")
     {
       target_h_position_ = it->getData<double>()[0];
-      std::cout << "Moving arm to " << target_h_position_ << std::endl;
+      std::cout << "Moving arm by " << target_h_position_ << std::endl;
       state_ = MOVE_ARM;
     }
   }
