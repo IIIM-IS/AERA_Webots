@@ -131,6 +131,7 @@ void HandGrabSphereController::run() {
       while (!msg)
       {
         msg = receive_queue_->dequeue();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     }
     if (msg) {
