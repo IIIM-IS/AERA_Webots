@@ -1,0 +1,3 @@
+[submodule "controllers/aera_hand_controller_protobuf/AERA_Protobuf"]
+	path = controllers/aera_hand_controller_protobuf/AERA_Protobuf
+	url = https://github.com/IIIM-IS/AERA_Protobuf.git
