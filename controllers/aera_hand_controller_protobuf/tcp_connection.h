@@ -15,7 +15,7 @@
 #include <bitset>
 
 
-#include "Proto/tcp_data_message.pb.h"
+#include "AERA_Protobuf/tcp_data_message.pb.h"
 
 namespace tcp_io_device {
   /**
