@@ -119,14 +119,15 @@ void HandGrabSphereController::run() {
 #ifdef DEBUG
   diagnostic_mode_ = true;
 #endif // DEBUG
-  int receive_deadline = MAXINT;
+  int receive_deadline = aera_us + 65000;
+  std::unique_ptr<tcp_io_device::TCPMessage> pending_msg;
   while (robot_->step(robot_time_step_) != -1) {
     if (!aera_started_) {
       std::cout << "AERA not started, wait for start message before calling run()" << std::endl;
       break;
     }
     auto msg = receive_queue_->dequeue();
-    if (!msg && diagnostic_mode_ && aera_us >= receive_deadline)
+    if (!msg && diagnostic_mode_ && !pending_msg && aera_us == receive_deadline)
     {
       while (!msg)
       {
@@ -135,17 +136,19 @@ void HandGrabSphereController::run() {
       }
     }
     if (msg) {
-      receive_deadline = MAXINT;
-      if (msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
-        handleDataMsg(dataMsgToMsgData(std::move(msg)));
+      pending_msg = std::move(msg);
+    }
+    if (pending_msg && (!diagnostic_mode_ || aera_us == receive_deadline)) {
+      if (pending_msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
+        handleDataMsg(dataMsgToMsgData(std::move(pending_msg)));
       }
       else {
         std::cout << "Received message with unexpected type "
-          << tcp_io_device::TCPConnection::type_to_name_map_[msg->messagetype()]
+          << tcp_io_device::TCPConnection::type_to_name_map_[pending_msg->messagetype()]
           << ". Ignoring the message..." << std::endl;
       }
+      pending_msg = NULL;
     }
-
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
@@ -203,7 +206,13 @@ void HandGrabSphereController::run() {
       receive_deadline = aera_us + 65000;
     }
     executeCommand();
-    aera_us += robot_time_step_ * 100;
+    int next_aera_us = aera_us + robot_time_step_ * 100;
+    if (diagnostic_mode_ && state_ != IDLE && (next_aera_us % 100'000 == 0)) {
+      // In the next interation, we would send the state, but the robot is still executing a command.
+      // In diagnistic mode, don't advance aera_us but wait for IDLE until we send the state.
+    }
+    else
+      aera_us = next_aera_us;
   }
 }
 
