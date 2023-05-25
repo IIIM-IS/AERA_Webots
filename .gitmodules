@@ -1,0 +1,3 @@
+[submodule "controllers/ur3e_with_gripper/AERA_Protobuf"]
+	path = controllers/ur3e_with_gripper/AERA_Protobuf
+	url = https://github.com/IIIM-IS/AERA_Protobuf.git
