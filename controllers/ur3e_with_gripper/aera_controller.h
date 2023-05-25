@@ -5,8 +5,8 @@
 #include <vector>
 #include <memory>
 #include "tcp_connection.h"
-#include "Proto/utils.h"
-#include "Proto/tcp_data_message.pb.h"
+#include "AERA_Protobuf/utils.h"
+#include "AERA_Protobuf/tcp_data_message.pb.h"
 #include <webots/Supervisor.hpp>
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
