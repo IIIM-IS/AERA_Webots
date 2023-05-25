@@ -111,6 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(WEBOTS_HOME)/include/controller/c;$(WEBOTS_HOME)/include/controller/cpp</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;ENABLE_PROTOBUF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -154,20 +155,21 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Supervisor.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp" />
     <ClCompile Include="aera_hand_controller_protobuf.cpp" />
+    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc" />
     <ClCompile Include="hand_grab_sphere_controller.cpp" />
-    <ClCompile Include="Proto\tcp_data_message.pb.cc" />
     <ClCompile Include="aera_controller.cpp" />
     <ClCompile Include="tcp_connection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aera_controller.h" />
+    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h" />
+    <ClInclude Include="AERA_Protobuf\utils.h" />
     <ClInclude Include="hand_grab_sphere_controller.h" />
     <ClInclude Include="tcp_connection.h" />
-    <ClInclude Include="Proto\tcp_data_message.pb.h" />
-    <ClInclude Include="Proto\utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Proto\tcp_data_message.proto" />
+    <None Include="AERA_Protobuf\README.md" />
+    <None Include="AERA_Protobuf\tcp_data_message.proto" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
