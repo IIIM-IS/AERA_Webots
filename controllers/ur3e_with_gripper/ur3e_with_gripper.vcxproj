@@ -111,6 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(WEBOTS_HOME)/include/controller/c;$(WEBOTS_HOME)/include/controller/cpp;C:\Users\leonard20\Documents\GitHub\Eigen</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_MBCS;ENABLE_PROTOBUF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -154,8 +155,8 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Supervisor.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp" />
     <ClCompile Include="aera_controller.cpp" />
+    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc" />
     <ClCompile Include="math_lib.cpp" />
-    <ClCompile Include="Proto\tcp_data_message.pb.cc" />
     <ClCompile Include="tcp_connection.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
     <ClCompile Include="ur3e_controller.cpp" />
@@ -163,14 +164,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aera_controller.h" />
+    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h" />
+    <ClInclude Include="AERA_Protobuf\utils.h" />
     <ClInclude Include="math_lib.h" />
-    <ClInclude Include="Proto\tcp_data_message.pb.h" />
-    <ClInclude Include="Proto\utils.h" />
     <ClInclude Include="tcp_connection.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="ur3e_controller.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AERA_Protobuf\README.md" />
+    <None Include="AERA_Protobuf\tcp_data_message.proto" />
     <None Include="ur3e_with_gripper.vcxproj.filter" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
