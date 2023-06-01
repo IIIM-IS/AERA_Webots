@@ -101,24 +101,38 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
-    <ClCompile Include="Proto\tcp_data_message.pb.cc" />
     <ClCompile Include="tcp_connection.cpp" />
     <ClCompile Include="aera_controller.cpp" />
     <ClCompile Include="hand_grab_sphere_controller.cpp" />
+    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc">
+      <Filter>AERA_Protobuf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
       <UniqueIdentifier>{7504e0ce-027e-4b0e-baca-f4bb16112725}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AERA_Protobuf">
+      <UniqueIdentifier>{58c537aa-6242-472e-8128-12478c33f7d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Proto\tcp_data_message.pb.h" />
-    <ClInclude Include="Proto\utils.h" />
     <ClInclude Include="tcp_connection.h" />
     <ClInclude Include="aera_controller.h" />
     <ClInclude Include="hand_grab_sphere_controller.h" />
+    <ClInclude Include="AERA_Protobuf\utils.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Proto\tcp_data_message.proto" />
+    <None Include="AERA_Protobuf\tcp_data_message.proto">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
+    <None Include="AERA_Protobuf\README.md">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
   </ItemGroup>
 </Project>
