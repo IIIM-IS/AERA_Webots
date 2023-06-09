@@ -10,7 +10,7 @@ Then open the Visual Studio solution file of your choice of controller (e.g., AE
 Build the project (don't run, only build).  
 
 ## Run Webots demo:
-Change the settings.xml file to use the right seed code and the tcp_io_device I/O-Device.  
+Change the settings.xml file to use the right seed code (e.g., hand-grab-sphere-learn.external.replicode) and set the I/O-Device to the tcp_io_device.  
 Run AERA.  
 Open Webots.  
 Select File->Open World... and select the correct Webots world which includes the robot controlled by the controller that was built earlier (e.g., AERA_Webots/worlds/aera_hand_robot.wbt).  
