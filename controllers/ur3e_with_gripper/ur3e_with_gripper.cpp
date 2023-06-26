@@ -23,6 +23,12 @@ using namespace webots;
 int main(int argc, char **argv) {
   // create the Robot instance.
   UR3eController controller = UR3eController();
+  int err = controller.startConnection();
+  if (err != 0) {
+    std::cout << "Error when establishing TCP connection. Shutting down..." << std::endl;
+    return 1;
+  }
+  std::cout << "TCP connection successfully established" << std::endl;
   controller.start();
   
 

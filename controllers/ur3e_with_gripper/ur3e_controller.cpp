@@ -4,6 +4,7 @@
 
 UR3eController::UR3eController() : AERAController() {
 
+  state_ = STARTING;
   robot_ = new webots::Supervisor();
   robot_time_step_ = (int)robot_->getBasicTimeStep();
   ur3e_robot_arm_ = robot_->getFromDef("UR10e");
@@ -100,9 +101,11 @@ int UR3eController::start() {
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
   
 
-  //sendSetupMessage(objects, commands);
-  //waitForStartMsg();
+  sendSetupMessage(objects, commands);
+  waitForStartMsg();
   init();
+  // Step once to initialize joint sensors.
+  robot_->step(robot_time_step_);
 
   const double* hand_pos_array = gps_sensor_->getValues();
   std::vector<double> hand_xy_pos = getRoundedXYPosition(hand_pos_array);
@@ -122,7 +125,7 @@ int UR3eController::start() {
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
     data_to_send.push_back(createMsgData<double>(objects[2 + i], box_xy_positions[i]));
   }
-  // sendDataMessage(data_to_send);
+  sendDataMessage(data_to_send);
   state_ = IDLE;
   run();
   return 0;
@@ -156,18 +159,20 @@ void UR3eController::run() {
 #ifdef DEBUG
   diagnostic_mode_ = true;
 #endif // DEBUG
-  int receive_deadline = MAXINT;
+  int receive_deadline = aera_us + 65000;
 
+/*
   bool first = true;
   bool second = true;
+*/
+  std::unique_ptr<tcp_io_device::TCPMessage> pending_msg;
   while (robot_->step(robot_time_step_) != -1) {
-    /*
     if (!aera_started_) {
       std::cout << "AERA not started, wait for start message before calling run()" << std::endl;
       break;
     }
     auto msg = receive_queue_->dequeue();
-    if (!msg && diagnostic_mode_ && aera_us >= receive_deadline)
+    if (!msg && diagnostic_mode_ && !pending_msg && aera_us == receive_deadline)
     {
       while (!msg)
       {
@@ -176,7 +181,9 @@ void UR3eController::run() {
       }
     }
     if (msg) {
-      receive_deadline = MAXINT;
+      pending_msg = std::move(msg);
+    }
+    if (pending_msg && (!diagnostic_mode_ || aera_us == receive_deadline)) {
       if (msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
         handleDataMsg(dataMsgToMsgData(std::move(msg)));
       }
@@ -185,8 +192,10 @@ void UR3eController::run() {
           << tcp_io_device::TCPConnection::type_to_name_map_[msg->messagetype()]
           << ". Ignoring the message..." << std::endl;
       }
+      pending_msg = NULL;
     }
-    */
+    // Don't send the state on the first pass, but wait to arrive at the initial position.
+    if (aera_us > 100'000 && aera_us % 100'000 == 0) {
     const double* hand_pos_array = gps_sensor_->getValues();
     std::vector<double> hand_xy_pos = getRoundedXYPosition(hand_pos_array);
 
@@ -230,11 +239,13 @@ void UR3eController::run() {
           continue;
         }
       }
-      //sendDataMessage(msg_data);
+      sendDataMessage(msg_data);
 
       receive_deadline = aera_us + 65000;
     }
+    }
 
+/*
     if (first) {
       target_h_position_ = box_xy_positions[0];
       state_ = MOVE_ARM;
@@ -246,9 +257,16 @@ void UR3eController::run() {
       state_ = MOVE_ARM;
       second = false;
     }
+*/
 
     executeCommand();
-    aera_us += robot_time_step_ * 100;
+    int next_aera_us = aera_us + robot_time_step_ * 100;
+    if (diagnostic_mode_ && state_ != IDLE && (next_aera_us % 100'000 == 0)) {
+      // In the next interation, we would send the state, but the robot is still executing a command.
+      // In diagnistic mode, don't advance aera_us but wait for IDLE until we send the state.
+    }
+    else
+      aera_us = next_aera_us;
   }
 }
 
