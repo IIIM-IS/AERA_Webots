@@ -181,14 +181,13 @@ void UR3eController::run() {
     if (msg) {
       pending_msg = std::move(msg);
     }
-
-    if (pending_msg && (!diagnostic_mode_ || aera_us >= receive_deadline)) {
+    if (pending_msg && (!diagnostic_mode_ || aera_us == receive_deadline)) {
       if (pending_msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
         handleDataMsg(dataMsgToMsgData(std::move(pending_msg)));
       }
       else {
         std::cout << "Received message with unexpected type "
-          << tcp_io_device::TCPConnection::type_to_name_map_[msg->messagetype()]
+          << tcp_io_device::TCPConnection::type_to_name_map_[pending_msg->messagetype()]
           << ". Ignoring the message..." << std::endl;
       }
       pending_msg = NULL;
