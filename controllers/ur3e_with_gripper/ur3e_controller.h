@@ -50,7 +50,7 @@ protected:
 
   const double motor_offsets_[NUMBER_OF_ARM_MOTORS] = { 0.0, -M_PI / 2, 0.0, -M_PI / 2, 0.0, 0.0 };
 
-  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.4, 0.2, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05} };
+  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.0, 1.0, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05} };
   const double box_rotations_[NUMBER_OF_BOXES][4] = { {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0} };
 
 private:
@@ -59,13 +59,14 @@ private:
 
   State state_;
 
+  std::vector<double> hand_xyz_pos_;
   std::vector<double> target_h_position_;
   std::vector<double> target_joint_angles_;
   std::vector<double> hand_closed_values_;
   std::vector<double> hand_open_values_;
 
-  const double position_accuracy_error_ = 0.001;
-  const double gripper_accuracy_error_ = 0.0005;
+  const double position_accuracy_error_ = 0.01;
+  const double gripper_accuracy_error_ = 0.05;
 
   void executeCommand();
 
@@ -110,10 +111,18 @@ private:
     }
   }
 
-  static std::vector<double> getRoundedXYPosition(const double* pos_array, int decimal_places = 2) {
+  static std::vector<double> getRoundedXYPosition(const double* pos_array, int decimal_places = 1) {
     std::vector<double> out;
     out.push_back(round(pos_array[0] * pow(10., decimal_places)) / pow(10., decimal_places));
     out.push_back(round(pos_array[1] * pow(10., decimal_places)) / pow(10., decimal_places));
+    return out;
+  }
+
+  static std::vector<double> getRoundedXYZPosition(const double* pos_array, int decimal_places = 1) {
+    std::vector<double> out;
+    out.push_back(round(pos_array[0] * pow(10., decimal_places)) / pow(10., decimal_places));
+    out.push_back(round(pos_array[1] * pow(10., decimal_places)) / pow(10., decimal_places));
+    out.push_back(round(pos_array[2] * pow(10., decimal_places)) / pow(10., decimal_places));
     return out;
   }
 };
