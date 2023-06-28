@@ -9,6 +9,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/solids/protos/SolidBox.proto"
 
 WorldInfo {
+  basicTimeStep 5
 }
 Viewpoint {
   orientation 0.22031886599877806 0.7783165325896566 -0.5879481034773615 0.8973921838601566
@@ -97,34 +98,8 @@ DEF blue_box SolidBox {
   }
 }
 DEF UR10e UR10e {
-  hidden position_0_0 0.0010000008818756368
-  hidden rotation_1 0 0 1 0.0010000008817892332
-  hidden position_1_0 -1.5697963992908401
-  hidden rotation_2 0 1 0 0.000999600702100383
-  hidden position_2_0 0.0009998232571828574
-  hidden rotation_3 0 1 0 0.0009998232571246134
-  hidden position_3_0 -1.5697965801734586
-  hidden rotation_4 0 1 0 0.000999419827015034
-  hidden position_4_0 0.0009999861632818089
-  hidden rotation_5 0 0 1 0.0009999861632445988
-  hidden position_5_0 0.000999733633860089
-  hidden rotation_6 0 1 0 0.0009997336338286528
-  hidden position_9_0 -3.583938585904889e-07
-  hidden position_9_1 -3.564471011685555e-07
-  hidden position_9_2 0.04950000470208245
-  hidden rotation_10 0.7068252250620836 0.7073882252396337 2.8733400196677094e-06 3.1415977464764557
-  hidden position_10_0 0.049499996330253954
-  hidden position_11_0 -4.4208932113563124e-10
-  hidden rotation_12 0 0 -1 0.5200000008841793
-  hidden position_12_0 -0.052300000000000374
-  hidden rotation_14 0.7068252250620772 0.7073882252396374 2.8740280284336834e-06 3.141597747853569
-  hidden position_14_0 0.04949999668481636
-  hidden position_15_0 -2.685712186841005e-10
-  hidden rotation_16 0 0 -1 0.5200000005371399
-  hidden position_16_0 -0.05229999999999972
-  hidden position_18_0 6.96783496041112e-10
-  hidden rotation_19 0 0 -1 0.5199999993032169
-  hidden position_19_0 -0.052300000004313334
+  hidden rotation_12 0 0 -1 0.5200000013262689
+  hidden rotation_16 0 0 -1 0.5200000008057115
   controller "ur3e_with_gripper"
   supervisor TRUE
   selfCollision FALSE
