@@ -12,8 +12,6 @@
 #include <webots/PositionSensor.hpp>
 #include <webots/GPS.hpp>
 
-using communication_id_t = int64_t;
-
 class AERAController
 {
 public:
