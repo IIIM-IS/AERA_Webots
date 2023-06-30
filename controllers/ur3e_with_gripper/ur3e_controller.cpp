@@ -7,6 +7,9 @@ UR3eController::UR3eController() : AERAController() {
   state_ = STARTING;
   robot_ = new webots::Supervisor();
   robot_time_step_ = (int)robot_->getBasicTimeStep();
+  running_time_steps_ = 0;
+  max_exec_time_steps_ = execution_times_map_.at("default");
+  receive_cmd_time_ = INT_MAX - 1;
   ur3e_robot_arm_ = robot_->getFromDef("UR10e");
   ur_kinematics_ = new universalRobots::UR(universalRobots::UR10, true, -0.17);
 
@@ -96,8 +99,8 @@ int UR3eController::start() {
     objects.push_back(tcp_io_device::MetaData(string_id_mapping_["b_" + std::to_string(i)], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
   }
 
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
   
 
@@ -106,6 +109,7 @@ int UR3eController::start() {
   init();
   // Step once to initialize joint sensors.
   robot_->step(robot_time_step_);
+  running_time_steps_ += robot_time_step_;
 
   const double* hand_pos_array = gps_sensor_->getValues();
   hand_xyz_pos_ = getRoundedXYZPosition(hand_pos_array);
@@ -120,10 +124,23 @@ int UR3eController::start() {
   }
 
   std::vector<tcp_io_device::MsgData> data_to_send;
+#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+  double save_z = hand_xyz_pos_[2];
+  hand_xyz_pos_[2] = 0;
+#endif
   data_to_send.push_back(createMsgData<double>(objects[0], hand_xyz_pos_));
   data_to_send.push_back(createMsgData<communication_id_t>(objects[1], { -1 }));
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
+
+#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+    double save_z = box_xyz_positions[i][2];
+    box_xyz_positions[i][2] = 0;
+#endif
     data_to_send.push_back(createMsgData<double>(objects[2 + i], box_xyz_positions[i]));
+
+#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+    box_xyz_positions[i][2] = save_z;
+#endif
   }
   sendDataMessage(data_to_send);
   state_ = IDLE;
@@ -133,6 +150,7 @@ int UR3eController::start() {
 
 void UR3eController::init() {
   robot_->step(robot_time_step_);
+  running_time_steps_ += robot_time_step_;
   for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i)
   {
     arm_motors_[i]->setPosition(0.0 + motor_offsets_[i]);
@@ -145,15 +163,25 @@ void UR3eController::init() {
   double random_positions[NUMBER_OF_BOXES][3];
 
   get_random_box_positions(random_positions);
+#if 1 // debug
+  random_positions[0][0] = -0.5;
+  random_positions[0][1] = 1;
+  random_positions[1][0] = 0;
+  random_positions[1][1] = 1;
+  random_positions[2][0] = 0;
+  random_positions[2][1] = -1;
+#endif
 
-  for (size_t i = 1; i < NUMBER_OF_BOXES; i++)
+  for (size_t i = 0; i < NUMBER_OF_BOXES; i++)
   {
     boxes_[i]->getField("rotation")->setSFRotation(box_rotations_[i]);
     boxes_[i]->getField("translation")->setSFVec3f(random_positions[i]);
   }
 
+#if 0
   boxes_[0]->getField("rotation")->setSFRotation(box_rotations_[0]);
   boxes_[0]->getField("translation")->setSFVec3f(box_positions_[0]);
+#endif
 }
 
 void UR3eController::run() {
@@ -165,6 +193,7 @@ void UR3eController::run() {
   int receive_deadline = aera_us + 65'000 / robot_time_step_;
   std::unique_ptr<tcp_io_device::TCPMessage> pending_msg;
   while (robot_->step(robot_time_step_) != -1) {
+    running_time_steps_ += robot_time_step_;
     if (!aera_started_) {
       std::cout << "AERA not started, wait for start message before calling run()" << std::endl;
       break;
@@ -225,22 +254,36 @@ void UR3eController::run() {
         }
         if (id_string_mapping_[it->getID()] == "position") {
           if (id_string_mapping_[it->getEntityID()] == "h") {
+#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = hand_xyz_pos_[2];
+            hand_xyz_pos_[2] = 0;
+#endif
             msg_data.push_back(createMsgData<double>(*it, hand_xyz_pos_));
+#if 1
+            hand_xyz_pos_[2] = save_z;
+#endif
             continue;
           }
           std::string entity = id_string_mapping_[it->getEntityID()];
           if (entity.substr(0, 2) == "b_") {
             int box_num = std::stoi(entity.substr(2));
+#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = box_xyz_positions[box_num][2];
+            box_xyz_positions[box_num][2] = 0;
+#endif
             msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[box_num]));
+#if 1
+            box_xyz_positions[box_num][2] = save_z;
+#endif
             continue;
           }
         }
       }
-      std::cout << "Sending message with following data:" << std::endl;
+      // std::cout << "Sending message with following data:" << std::endl;
       sendDataMessage(msg_data);
-      for (int i = 0; i < msg_data.size(); ++i) {
-        std::cout << msg_data[i] << std::endl;
-      }
+      // for (int i = 0; i < msg_data.size(); ++i) {
+      //   std::cout << msg_data[i] << std::endl;
+      // }
       receive_deadline = aera_us + 65'000 / robot_time_step_;
     }
 
@@ -264,6 +307,10 @@ void UR3eController::executeCommand() {
   case STOPPING:
     return;
   case MOVE_DOWN_CLOSE:
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = MOVE_UP;
+      return;
+    }
     target_joint_angles_ = getJointAnglesFromXY(target_h_position_, 0);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
       if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
@@ -275,6 +322,10 @@ void UR3eController::executeCommand() {
     }
     return;
   case MOVE_DOWN_OPEN:
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = MOVE_UP;
+      return;
+    }
     target_joint_angles_ = getJointAnglesFromXY(target_h_position_, 0);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
       if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
@@ -297,6 +348,10 @@ void UR3eController::executeCommand() {
     }
     return;
   case MOVE_ARM:
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = IDLE;
+      return;
+    }
     target_joint_angles_ = getJointAnglesFromXY(target_h_position_, 1);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
       if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
@@ -308,9 +363,12 @@ void UR3eController::executeCommand() {
     }
     return;
   case CLOSE_GRIPPER:
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = OPEN_GRIPPER;
+      return;
+    }
     for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
       if (fabs(hand_closed_values_[i] - hand_sensors_[i]->getValue()) > gripper_accuracy_error_) {
-        std::cout << "Distance to desired value: " << fabs(hand_closed_values_[i] - hand_sensors_[i]->getValue()) << std::endl;
         setHandAngles(hand_closed_values_);
         state_ = CLOSE_GRIPPER;
         break;
@@ -336,6 +394,7 @@ void UR3eController::executeCommand() {
 
 
 void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) {
+  receive_cmd_time_ = running_time_steps_;
   std::cout << "Received message with the following objects:" << std::endl;
   for (auto it = msg_data.begin(); it != msg_data.end(); ++it) {
     std::string id_name = id_string_mapping_[it->getMetaData().getID()];
@@ -356,17 +415,11 @@ void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data)
     }
     else if (id_name == "move")
     {
-      std::cout << "Move command1" << std::endl;
       std::vector<double> move_by_command = it->getData<double>();
-      std::cout << "Move command2" << std::endl;
 
       std::vector<double> target_position;
-      std::cout << "Move command3" << std::endl;
-      std::cout << "HandXYZPos: " << hand_xyz_pos_.size() << std::endl;
       for (int i = 0; i < move_by_command.size(); ++i) {
-        std::cout << "Move command4" << std::endl;
         target_position.push_back(hand_xyz_pos_[i] + move_by_command[i]);
-        std::cout << "Move command5" << std::endl;
       }
       
       target_h_position_ = target_position;
@@ -374,6 +427,12 @@ void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data)
       std::cout << "Moving arm to: x: " << target_h_position_[0] << ", y: " << target_h_position_[1] << std::endl;
       
       state_ = MOVE_ARM;
+    }
+    if (execution_times_map_.find(id_name) != execution_times_map_.end()) {
+      max_exec_time_steps_ = execution_times_map_.at(id_name);
+    }
+    else {
+      max_exec_time_steps_ = execution_times_map_.at("default");
     }
   }
 }

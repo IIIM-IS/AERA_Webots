@@ -44,7 +44,15 @@ protected:
   webots::Node* boxes_[NUMBER_OF_BOXES];
 
   universalRobots::UR* ur_kinematics_;
+
   int robot_time_step_;
+
+  int running_time_steps_;
+  int receive_cmd_time_;
+
+  int max_exec_time_steps_;
+
+  const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"grab", 1'500}, {"release", 1'500}, {"default", 10'000} };
 
   void handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) override;
 
