@@ -8,9 +8,6 @@
 #include "AERA_Protobuf/utils.h"
 #include "AERA_Protobuf/tcp_data_message.pb.h"
 #include <webots/Supervisor.hpp>
-#include <webots/Motor.hpp>
-#include <webots/PositionSensor.hpp>
-#include <webots/GPS.hpp>
 
 class AERAController
 {
@@ -63,7 +60,9 @@ protected:
   }
 
   template<typename T>
+
   tcp_io_device::MsgData createMsgData(tcp_io_device::MetaData meta_data, std::vector<T> data);
+  tcp_io_device::MsgData createMsgData(tcp_io_device::MetaData meta_data, std::string data);
 
   void sendDataMessage(std::vector<tcp_io_device::MsgData> msg_data);
 

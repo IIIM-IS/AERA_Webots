@@ -130,6 +130,7 @@
     <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h">
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
+    <ClInclude Include="tip_camera.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ur3e_with_gripper.vcxproj.filter" />

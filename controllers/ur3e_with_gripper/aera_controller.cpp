@@ -115,6 +115,10 @@ tcp_io_device::MsgData AERAController::createMsgData(tcp_io_device::MetaData met
   return tcp_io_device::MsgData::createNewMsgData(meta_data, data);
 }
 
+tcp_io_device::MsgData AERAController::createMsgData(tcp_io_device::MetaData meta_data, std::string data) {
+  return tcp_io_device::MsgData::createNewMsgData(meta_data, data);
+}
+
 void AERAController::sendDataMessage(std::vector<tcp_io_device::MsgData> msg_data) {
   std::unique_ptr<tcp_io_device::TCPMessage> msg = std::make_unique<tcp_io_device::TCPMessage>();
   msg->set_messagetype(tcp_io_device::TCPMessage::DATA);

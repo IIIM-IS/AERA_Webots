@@ -1,10 +1,12 @@
 #include "ur3e_controller.h"
 
 #define DEBUG 1
+#define Z_0 1
 
 UR3eController::UR3eController() : AERAController() {
 
   state_ = STARTING;
+  measurement_state_ = MEASURE_HAND;
   robot_ = new webots::Supervisor();
   robot_time_step_ = (int)robot_->getBasicTimeStep();
   running_time_steps_ = 0;
@@ -42,7 +44,9 @@ UR3eController::UR3eController() : AERAController() {
 
   gps_sensor_ = robot_->getGPS("gps_tip");
 
-  tip_camera_ = robot_->getCamera("tip_camera");
+  inertial_unit_ = robot_->getInertialUnit("inertial unit");
+
+  tip_camera_ = new TipCamera(robot_->getCamera("tip_camera"));
 
   for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
     arm_motors_[i]->setVelocity(1.0);
@@ -57,6 +61,8 @@ UR3eController::UR3eController() : AERAController() {
 
   gps_sensor_->enable(robot_time_step_);
 
+  inertial_unit_->enable(robot_time_step_);
+
   tip_camera_->enable(robot_time_step_);
 
   hand_closed_values_ = { 0.4, 0.4, 0.4 };
@@ -69,6 +75,9 @@ UR3eController::~UR3eController() {
   if (robot_) {
     delete robot_;
   }
+  if (tip_camera_) {
+    delete tip_camera_;
+  }
 }
 
 int UR3eController::start() {
@@ -79,29 +88,40 @@ int UR3eController::start() {
   std::vector<std::string> entities_objects;
   // Add entities to the vector.
   entities_objects.push_back("h");
+  // entities_objects.push_back("cam");
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
     entities_objects.push_back("b_" + std::to_string(i));
   }
   // Add properties to the vector
   entities_objects.push_back("position");
+  entities_objects.push_back("rotation");
+  entities_objects.push_back("color");
   entities_objects.push_back("holding");
   // Add commands to the vector
   entities_objects.push_back("grab");
   entities_objects.push_back("release");
   entities_objects.push_back("move");
+  entities_objects.push_back("rotate");
+  entities_objects.push_back("measure");
   // Generate communication ids by filling the string_id_mapping_
   fillIdStringMaps(entities_objects);
 
   objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["rotation"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
+  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }, "set"));
+  // objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cam"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
+  // objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cam"], string_id_mapping_["color"], tcp_io_device::VariableDescription_DataType_STRING, { 1 }, ""));
   
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
     objects.push_back(tcp_io_device::MetaData(string_id_mapping_["b_" + std::to_string(i)], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
+    objects.push_back(tcp_io_device::MetaData(string_id_mapping_["b_" + std::to_string(i)], string_id_mapping_["rotation"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
   }
 
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
   commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["rotate"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
+  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["measure"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
   
 
   sendSetupMessage(objects, commands);
@@ -124,21 +144,29 @@ int UR3eController::start() {
   }
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
   double save_z = hand_xyz_pos_[2];
   hand_xyz_pos_[2] = 0;
 #endif
-  data_to_send.push_back(createMsgData<double>(objects[0], hand_xyz_pos_));
-  data_to_send.push_back(createMsgData<communication_id_t>(objects[1], { -1 }));
+  int index = 0;
+  data_to_send.push_back(createMsgData<double>(objects[index], hand_xyz_pos_));
+
+  data_to_send.push_back(createMsgData<double>(objects[++index], std::vector<double>({ 0.5, -0.5, 0.5, -0.5 })));
+
+  data_to_send.push_back(createMsgData<communication_id_t>(objects[++index], { -1 }));
+  // data_to_send.push_back(createMsgData<double>(objects[++index], hand_xyz_pos_));
+  // ++index;
+  // data_to_send.push_back(createMsgData(objects[++index], std::vector<int64_t>()));
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
 
-#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
     double save_z = box_xyz_positions[i][2];
     box_xyz_positions[i][2] = 0;
 #endif
-    data_to_send.push_back(createMsgData<double>(objects[2 + i], box_xyz_positions[i]));
+    data_to_send.push_back(createMsgData<double>(objects[++index], box_xyz_positions[i]));
+    ++index;
 
-#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
     box_xyz_positions[i][2] = save_z;
 #endif
   }
@@ -154,6 +182,12 @@ void UR3eController::init() {
   for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i)
   {
     arm_motors_[i]->setPosition(0.0 + motor_offsets_[i]);
+    if (target_joint_angles_.size() <= i) {
+      target_joint_angles_.push_back(0.0 + motor_offsets_[i]);
+    }
+    else {
+      target_joint_angles_[i] = 0.0 + motor_offsets_[i];
+    }
   }
 
   for (size_t i = 0; i < NUMBER_OF_HAND_MOTORS; ++i)
@@ -213,6 +247,8 @@ void UR3eController::run() {
     if (pending_msg && (!diagnostic_mode_ || aera_us == receive_deadline)) {
       if (pending_msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
         handleDataMsg(dataMsgToMsgData(std::move(pending_msg)));
+        std::cout << "HandleDataMsg called" << std::endl;
+        robot_->step(1);
       }
       else {
         std::cout << "Received message with unexpected type "
@@ -222,9 +258,28 @@ void UR3eController::run() {
       pending_msg = NULL;
     }
     // Don't send the state on the first pass, but wait to arrive at the initial position.
-    if (aera_us > 100'000 / robot_time_step_ && aera_us % (int)(100'000 / robot_time_step_) == 0) {
+    if (aera_us > 100'000 / robot_time_step_ && (aera_us % (int)(100'000 / robot_time_step_)) == 0) {
+
       const double* hand_pos_array = gps_sensor_->getValues();
       hand_xyz_pos_ = getRoundedXYZPosition(hand_pos_array);
+
+      const double* hand_rotation = inertial_unit_->getQuaternion();
+      double _1 = hand_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond new_rotation = Eigen::Quaterniond(
+        _1 * round(hand_rotation[3] * 100.) / 100.,
+        _1 * round(hand_rotation[0] * 100.) / 100.,
+        _1 * round(hand_rotation[1] * 100.) / 100.,
+        _1 * round(hand_rotation[2] * 100.) / 100.);
+      new_rotation.normalize();
+
+      std::cout << "new_rotation: " << new_rotation << std::endl;
+      std::cout << "old_rotation: " << hand_rotation_ << std::endl;
+
+      if (!(new_rotation.coeffs() == (hand_rotation_.coeffs() * -1.) || new_rotation == hand_rotation_)) {
+        hand_rotation_ = new_rotation;
+      }
+
+      std::cout << "old_rotation: " << hand_rotation_ << std::endl;
 
       std::vector<std::vector<double>> box_xyz_positions;
       for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
@@ -246,44 +301,123 @@ void UR3eController::run() {
         }
       }
 
+      tip_camera_->recognitionEnable(1);
+      robot_->step(1);
+
       std::vector<tcp_io_device::MsgData> msg_data;
       for (auto it = objects_meta_data_.begin(); it != objects_meta_data_.end(); ++it) {
         if (id_string_mapping_[it->getID()] == "holding") {
           msg_data.push_back(createMsgData<communication_id_t>(*it, { holding_id }));
           continue;
         }
+        if (id_string_mapping_[it->getID()] == "color") {
+          std::vector<double> color = tip_camera_->getColorOfObject();
+          if (color.size() == 0) {
+            continue;
+          }
+          std::vector<int64_t> color_to_send;
+          //std::cout << "Color to send: ";
+          for (int i = 0; i < color.size(); ++i) {
+            color_to_send.push_back((int)(color[i]));
+            std::cout << color_to_send[i];
+          }
+          std::cout << std::endl;
+          //msg_data.push_back(createMsgData(*it, std::to_string(color_to_send[0])));
+          continue;
+        }
+        if (id_string_mapping_[it->getID()] == "rotation") {
+
+          std::string entity = id_string_mapping_[it->getEntityID()];
+          if (entity == "h") {
+
+            std::vector<double> data_to_send;
+            data_to_send.push_back(round(hand_rotation_.w() * 100.) / 100.);
+            data_to_send.push_back(round(hand_rotation_.x() * 100.) / 100.);
+            data_to_send.push_back(round(hand_rotation_.y() * 100.) / 100.);
+            data_to_send.push_back(round(hand_rotation_.z() * 100.) / 100.);
+            msg_data.push_back(createMsgData<double>(*it, data_to_send));
+          }
+          else if (entity.substr(0, 2) == "b_") {
+            if (measurement_state_ != MEASURE_HAND) {
+              //msg_data.push_back(createMsgData<double>(*it, std::vector<double>()));
+              continue;
+            }
+            int number_of_rec_objects = tip_camera_->getRecognitionNumberOfObjects();
+
+            if (number_of_rec_objects != 0) {
+              auto rec_objects = tip_camera_->getRecognitionObjects();
+
+              rec_objects[0].id;
+              boxes_[0]->getId();
+
+              if (rec_objects[0].id != boxes_[std::stoi(entity.substr(2, 3))]->getId()) {
+                std::cout << "ID of rec_obj: " << rec_objects[0].id << std::endl;
+                std::cout << "ID of checked obj: " << boxes_[std::stoi(entity.substr(2, 3))]->getId() << std::endl;
+                std::cout << "box0 id: " << boxes_[0]->getId() << ", box1 id: " << boxes_[1]->getId() << ", box2 id: " << boxes_[2]->getId() << std::endl;
+                continue;
+              }
+
+              auto orientation = rec_objects[0].orientation;
+              Eigen::AngleAxisd angle_axis = Eigen::AngleAxisd(orientation[3], Eigen::Vector3d(orientation[0], orientation[1], orientation[2]));
+              Eigen::Quaterniond in_inertial_frame = angle_axis.inverse() * Eigen::AngleAxisd(- M_PI / 2., Eigen::Vector3d(0, 0, 1));
+
+              std::cout << "Orientation of object in inertial frame:" << std::endl << "Quaternion: " << std::endl << in_inertial_frame << std::endl;
+
+              std::vector<double> data_to_send;
+              data_to_send.push_back(round(in_inertial_frame.w() * 100.) / 100.);
+              data_to_send.push_back(round(in_inertial_frame.x() * 100.) / 100.);
+              data_to_send.push_back(round(in_inertial_frame.y() * 100.) / 100.);
+              data_to_send.push_back(round(in_inertial_frame.z() * 100.) / 100.);
+              msg_data.push_back(createMsgData<double>(*it, data_to_send));
+            }
+          }
+        }
         if (id_string_mapping_[it->getID()] == "position") {
-          if (id_string_mapping_[it->getEntityID()] == "h") {
-#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+          std::string entity = id_string_mapping_[it->getEntityID()];
+          if (entity == "h") {
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = hand_xyz_pos_[2];
             hand_xyz_pos_[2] = 0;
 #endif
             msg_data.push_back(createMsgData<double>(*it, hand_xyz_pos_));
-#if 1
+#if Z_0
+            hand_xyz_pos_[2] = save_z;
+#endif
+            //measurement_state_ = NONE;
+            continue;
+          }
+          if (entity == "cam") {
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = hand_xyz_pos_[2];
+            hand_xyz_pos_[2] = 0;
+#endif
+            //msg_data.push_back(createMsgData<double>(*it, hand_xyz_pos_));
+#if Z_0
             hand_xyz_pos_[2] = save_z;
 #endif
             continue;
           }
-          std::string entity = id_string_mapping_[it->getEntityID()];
           if (entity.substr(0, 2) == "b_") {
             int box_num = std::stoi(entity.substr(2));
-#if 1 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = box_xyz_positions[box_num][2];
             box_xyz_positions[box_num][2] = 0;
 #endif
             msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[box_num]));
-#if 1
+#if Z_0
             box_xyz_positions[box_num][2] = save_z;
 #endif
             continue;
           }
         }
       }
+      tip_camera_->recognitionDisable();
       // std::cout << "Sending message with following data:" << std::endl;
       sendDataMessage(msg_data);
       // for (int i = 0; i < msg_data.size(); ++i) {
       //   std::cout << msg_data[i] << std::endl;
       // }
+      measurement_state_ = NONE;
       receive_deadline = aera_us + 65'000 / robot_time_step_;
     }
 
@@ -386,6 +520,21 @@ void UR3eController::executeCommand() {
       state_ = MOVE_UP;
     }
     return;
+  case ROTATE_HAND:
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = IDLE;
+      return;
+    }
+    for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
+      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_);
+        state_ = ROTATE_HAND;
+        break;
+      }
+      state_ = IDLE;
+    }
+    return;
+  case MEASURING:
   default:
     return;
   }
@@ -405,7 +554,11 @@ void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data)
       // Unknown command
       continue;
     }
-    if (id_name == "grab")
+    if (id_name == "measure") {
+      it->getData<communication_id_t>();
+      measurement_state_ = MEASURE_HAND;
+    }
+    else if (id_name == "grab")
     {
       state_ = MOVE_DOWN_CLOSE;
     }
@@ -427,6 +580,20 @@ void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data)
       std::cout << "Moving arm to: x: " << target_h_position_[0] << ", y: " << target_h_position_[1] << std::endl;
       
       state_ = MOVE_ARM;
+    }
+    else if (id_name == "rotate") {
+      std::vector<double> move_by_data = it->getData<double>();
+      Eigen::Quaterniond move_by_quaternion = Eigen::Quaterniond(move_by_data[0], move_by_data[1], move_by_data[2], move_by_data[3]);
+      move_by_quaternion.normalize();
+      //std::cout << "Quaternion:" << std::endl << move_by_quaternion << std::endl;
+      auto test = Eigen::AngleAxisd(move_by_quaternion);
+      //std::cout << "AngleAxis: Angle: " << std::endl << test.angle() << std::endl << "Axis:" << std::endl << test.axis() << std::endl;
+      auto euler_angles = move_by_quaternion.toRotationMatrix().eulerAngles(0, 1, 2);
+      //std::cout << "EulerAngles: " << std::endl << euler_angles << std::endl;
+
+      //std::cout << "Quaternion calculation: " << std::endl << hand_rotation_ * move_by_quaternion << std::endl;
+      target_joint_angles_[5] += euler_angles.y();
+      state_ = ROTATE_HAND;
     }
     if (execution_times_map_.find(id_name) != execution_times_map_.end()) {
       max_exec_time_steps_ = execution_times_map_.at(id_name);

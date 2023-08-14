@@ -1,8 +1,13 @@
 #pragma once
 #include "aera_controller.h"
 #include "universal_robots_kinematics.h"
-#include "webots/Camera.hpp"
+#include "tip_camera.h"
 #include <random>
+#include <webots/Motor.hpp>
+#include <webots/PositionSensor.hpp>
+#include <webots/GPS.hpp>
+#include <webots/InertialUnit.hpp>
+#include "Eigen/Geometry"
 
 #define NUMBER_OF_ARM_MOTORS 6
 #define NUMBER_OF_HAND_MOTORS 3
@@ -39,7 +44,9 @@ protected:
 
   webots::GPS* gps_sensor_;
 
-  webots::Camera* tip_camera_;
+  webots::InertialUnit* inertial_unit_;
+
+  TipCamera* tip_camera_;
 
   webots::Node* boxes_[NUMBER_OF_BOXES];
 
@@ -63,15 +70,20 @@ protected:
 
 private:
 
-  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, CLOSE_GRIPPER, OPEN_GRIPPER, STOPPING };
+  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, ROTATE_HAND, CLOSE_GRIPPER, OPEN_GRIPPER, MEASURING, STOPPING };
+  enum MeasurementState {NONE, MEASURE_HAND};
 
   State state_;
+  MeasurementState measurement_state_;
 
   std::vector<double> hand_xyz_pos_;
   std::vector<double> target_h_position_;
   std::vector<double> target_joint_angles_;
   std::vector<double> hand_closed_values_;
   std::vector<double> hand_open_values_;
+
+  Eigen::Quaterniond hand_rotation_;
+  Eigen::Quaterniond target_hand_rotation_;
 
   const double position_accuracy_error_ = 0.01;
   const double gripper_accuracy_error_ = 0.05;

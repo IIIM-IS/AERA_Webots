@@ -168,6 +168,7 @@
     <ClInclude Include="AERA_Protobuf\utils.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tcp_connection.h" />
+    <ClInclude Include="tip_camera.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="ur3e_controller.h" />
   </ItemGroup>

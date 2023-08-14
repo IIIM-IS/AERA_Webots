@@ -6,14 +6,14 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/appearances/protos/Parquetry.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/robots/universal_robots/protos/UR10e.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/devices/robotiq/protos/Robotiq3fGripper.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/solids/protos/SolidBox.proto"
+EXTERNPROTO "../protos/RecognizableSolidBox.proto"
 
 WorldInfo {
-  basicTimeStep 5
+  basicTimeStep 10
 }
 Viewpoint {
-  orientation 0.22031886599877806 0.7783165325896566 -0.5879481034773615 0.8973921838601566
-  position -3.9845921108062967 2.352883493101669 4.086707679773413
+  orientation 0.2169755795005098 0.7248373505267229 -0.6538596280409265 0.8586472529070279
+  position -3.8326971894763306 2.512209082617245 3.4548092179981844
 }
 TexturedBackground {
 }
@@ -34,8 +34,34 @@ CircleArena {
   }
   wallHeight 0.05
 }
-DEF green_box SolidBox {
-  translation -0.5554612606558823 -0.3841082633065622 0.06
+DEF UR10e UR10e {
+  controller "ur3e_with_gripper"
+  supervisor TRUE
+  selfCollision FALSE
+  toolSlot [
+    DEF inertial_unit InertialUnit {
+      translation 0 0.21 0
+    }
+    Camera {
+      rotation 0 0 1 1.5708
+      name "tip_camera"
+      width 128
+      height 128
+      recognition Recognition {
+        maxObjects 1
+        occlusion FALSE
+      }
+    }
+    DEF gps GPS {
+      translation 0 0.21 0
+      name "gps_tip"
+    }
+    DEF gripper Robotiq3fGripper {
+    }
+  ]
+}
+DEF green_box RecognizableSolidBox {
+  translation 0 1 0.05
   name "green_box"
   size 0.1 0.1 0.1
   appearance PBRAppearance {
@@ -54,9 +80,12 @@ DEF green_box SolidBox {
       0 0 0
     ]
   }
+  recognitionColors [
+    0 1 0
+  ]
 }
-DEF red_box SolidBox {
-  translation -0.16816633312970586 0.6185339503490799 0.06
+DEF red_box RecognizableSolidBox {
+  translation -0.5 1 0.05
   name "red_box"
   size 0.1 0.1 0.1
   appearance PBRAppearance {
@@ -75,9 +104,12 @@ DEF red_box SolidBox {
       0 0 0
     ]
   }
+  recognitionColors [
+    1 0 0
+  ]
 }
-DEF blue_box SolidBox {
-  translation -0.1177503292235289 -0.6596783426292468 0.06
+DEF blue_box RecognizableSolidBox {
+  translation 0 -1 0.05
   name "blue_box"
   size 0.1 0.1 0.1
   appearance PBRAppearance {
@@ -96,25 +128,7 @@ DEF blue_box SolidBox {
       0 0 0
     ]
   }
-}
-DEF UR10e UR10e {
-  hidden rotation_12 0 0 -1 0.5200000013262689
-  hidden rotation_16 0 0 -1 0.5200000008057115
-  controller "ur3e_with_gripper"
-  supervisor TRUE
-  selfCollision FALSE
-  toolSlot [
-    Camera {
-      rotation 0 0 1 1.5708
-      name "tip_camera"
-      width 128
-      height 128
-    }
-    GPS {
-      translation 0 0.21 0
-      name "gps_tip"
-    }
-    Robotiq3fGripper {
-    }
+  recognitionColors [
+    0 0 1
   ]
 }
