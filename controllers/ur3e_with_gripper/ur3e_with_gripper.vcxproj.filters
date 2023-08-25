@@ -109,6 +109,7 @@
     <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
+    <ClCompile Include="toml_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
@@ -131,6 +132,8 @@
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
     <ClInclude Include="tip_camera.h" />
+    <ClInclude Include="toml.h" />
+    <ClInclude Include="toml_parser.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ur3e_with_gripper.vcxproj.filter" />
@@ -140,5 +143,6 @@
     <None Include="AERA_Protobuf\README.md">
       <Filter>AERA_Protobuf</Filter>
     </None>
+    <None Include="settings.toml" />
   </ItemGroup>
 </Project>

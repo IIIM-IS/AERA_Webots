@@ -1,0 +1,62 @@
+title = "UR Demo"
+
+
+[[entities]]
+name = "h"
+properties = [ "position", "rotation", "holding" ]
+commands = [ "move", "grab", "release" ]
+
+[[entities]]
+name = "b_0"
+properties = [ "position", "rotation" ]
+
+[[entities]]
+name = "b_1"
+properties = [ "position", "rotation" ]
+
+
+[[entities]]
+name = "b_2"
+properties = [ "position", "rotation" ]
+
+
+[[properties]]
+name = "position"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[properties]]
+name = "rotation"
+type = "double"
+dimensionality = [4]
+opcode_handle = "quat"
+
+[[properties]]
+name = "holding"
+type = "communication_id"
+dimensionality = [1]
+opcode_handle = "set"
+
+
+[[commands]]
+name = "move"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[commands]]
+name = "grab"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "release"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "rotate"
+type = "double"
+dimensionality = [4]
+opcode_handle = "quat"

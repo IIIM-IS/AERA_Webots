@@ -1,4 +1,5 @@
 #include "ur3e_controller.h"
+#include "toml_parser.h"
 
 #define DEBUG 1
 #define Z_0 1
@@ -81,48 +82,40 @@ UR3eController::~UR3eController() {
 }
 
 int UR3eController::start() {
-  
+
+  toml_parser::TOMLParser parser;
+  parser.parse("settings.toml");
+
   std::vector<tcp_io_device::MetaData> objects;
   std::vector<tcp_io_device::MetaData> commands;
 
-  std::vector<std::string> entities_objects;
+
+  std::vector<std::string> entity_names = parser.entityNames();
+  std::vector<std::string> property_names = parser.propertyNames();
+  std::vector<std::string> command_names = parser.commandNames();
+
+  std::vector<std::string> object_names;
+  object_names.resize(entity_names.size() + property_names.size() + command_names.size());
   // Add entities to the vector.
-  entities_objects.push_back("h");
-  // entities_objects.push_back("cam");
-  for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
-    entities_objects.push_back("b_" + std::to_string(i));
-  }
+  object_names.insert(object_names.end(), entity_names.begin(), entity_names.end());
   // Add properties to the vector
-  entities_objects.push_back("position");
-  entities_objects.push_back("rotation");
-  entities_objects.push_back("color");
-  entities_objects.push_back("holding");
+  object_names.insert(object_names.end(), property_names.begin(), property_names.end());
   // Add commands to the vector
-  entities_objects.push_back("grab");
-  entities_objects.push_back("release");
-  entities_objects.push_back("move");
-  entities_objects.push_back("rotate");
-  entities_objects.push_back("measure");
+  object_names.insert(object_names.end(), command_names.begin(), command_names.end());
+
   // Generate communication ids by filling the string_id_mapping_
-  fillIdStringMaps(entities_objects);
+  fillIdStringMaps(object_names);
 
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["rotation"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }, "set"));
-  // objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cam"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
-  // objects.push_back(tcp_io_device::MetaData(string_id_mapping_["cam"], string_id_mapping_["color"], tcp_io_device::VariableDescription_DataType_STRING, { 1 }, ""));
-  
-  for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
-    objects.push_back(tcp_io_device::MetaData(string_id_mapping_["b_" + std::to_string(i)], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
-    objects.push_back(tcp_io_device::MetaData(string_id_mapping_["b_" + std::to_string(i)], string_id_mapping_["rotation"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
+  std::map<std::string, toml_parser::entity> entity_map = parser.entities();
+  for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
+    auto e = e_it->second;
+    for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
+      objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
+    }
+    for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
+      commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
+    }
   }
-
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 0 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 3 }, "vec3"));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["rotate"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 4 }, "quat"));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["measure"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
-  
 
   sendSetupMessage(objects, commands);
   waitForStartMsg();
@@ -135,41 +128,43 @@ int UR3eController::start() {
   hand_xyz_pos_ = getRoundedXYZPosition(hand_pos_array);
 
   std::vector<std::vector<double>> box_xyz_positions;
-  std::vector<double> box_z_positions;
   for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
     const double* box_pos_array = boxes_[i]->getField("translation")->getSFVec3f();
-    box_z_positions.push_back(round(box_pos_array[2] * 10.) / 10.);
     std::vector<double> box_xyz_pos = getRoundedXYZPosition(box_pos_array);
     box_xyz_positions.push_back(box_xyz_pos);
   }
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-  double save_z = hand_xyz_pos_[2];
-  hand_xyz_pos_[2] = 0;
+  for (auto o = objects.begin(); o != objects.end(); ++o) {
+    std::string entity = id_string_mapping_[o->getEntityID()];
+    std::string prop = id_string_mapping_[o->getID()];
+    if (entity == "h") {
+      if (prop == "position") {
+#if Z_0
+        data_to_send.push_back(createMsgData<double>(*o, { hand_xyz_pos_[0], hand_xyz_pos_[1], 0. }));
+#else
+        data_to_send.push_back(createMsgData<double>(*o, hand_xyz_pos_));
 #endif
-  int index = 0;
-  data_to_send.push_back(createMsgData<double>(objects[index], hand_xyz_pos_));
-
-  data_to_send.push_back(createMsgData<double>(objects[++index], std::vector<double>({ 0.5, -0.5, 0.5, -0.5 })));
-
-  data_to_send.push_back(createMsgData<communication_id_t>(objects[++index], { -1 }));
-  // data_to_send.push_back(createMsgData<double>(objects[++index], hand_xyz_pos_));
-  // ++index;
-  // data_to_send.push_back(createMsgData(objects[++index], std::vector<int64_t>()));
-  for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
-
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-    double save_z = box_xyz_positions[i][2];
-    box_xyz_positions[i][2] = 0;
+      }
+      else if (prop == "rotation") {
+        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ 0.5, -0.5, 0.5, -0.5 })));
+      }
+      else if (prop == "holding") {
+        data_to_send.push_back(createMsgData<communication_id_t>(*o, { -1 }));
+      }
+    }
+    else if (entity.substr(0, 2) == "b_") {
+      if (prop == "position") {
+        std::vector<double> box_pos = box_xyz_positions[std::stoi(entity.substr(2, 3))];
+#if Z_0
+        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
+#else
+        data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
-    data_to_send.push_back(createMsgData<double>(objects[++index], box_xyz_positions[i]));
-    ++index;
-
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-    box_xyz_positions[i][2] = save_z;
-#endif
+      }
+    }
   }
+
   sendDataMessage(data_to_send);
   state_ = IDLE;
   run();
@@ -335,7 +330,7 @@ void UR3eController::run() {
             data_to_send.push_back(round(hand_rotation_.x() * 100.) / 100.);
             data_to_send.push_back(round(hand_rotation_.y() * 100.) / 100.);
             data_to_send.push_back(round(hand_rotation_.z() * 100.) / 100.);
-            msg_data.push_back(createMsgData<double>(*it, data_to_send));
+            //msg_data.push_back(createMsgData<double>(*it, data_to_send));
           }
           else if (entity.substr(0, 2) == "b_") {
             if (measurement_state_ != MEASURE_HAND) {
@@ -368,7 +363,7 @@ void UR3eController::run() {
               data_to_send.push_back(round(in_inertial_frame.x() * 100.) / 100.);
               data_to_send.push_back(round(in_inertial_frame.y() * 100.) / 100.);
               data_to_send.push_back(round(in_inertial_frame.z() * 100.) / 100.);
-              msg_data.push_back(createMsgData<double>(*it, data_to_send));
+              //msg_data.push_back(createMsgData<double>(*it, data_to_send));
             }
           }
         }
