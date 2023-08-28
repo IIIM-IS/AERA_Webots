@@ -4,7 +4,7 @@
 #pragma once
 
 #include <iostream>
-#include <Eigen/Dense>
+#include "Eigen/Eigen/Dense"
 #include "math_lib.h"
 
 #define UR3_LINK_DIMENSIONS_d { 0.1089f, 0.1115f, 0.0f, 0.0f, 0.0007f, 0.0818f, 0.0f }

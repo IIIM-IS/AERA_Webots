@@ -7,7 +7,7 @@
 #include <webots/PositionSensor.hpp>
 #include <webots/GPS.hpp>
 #include <webots/InertialUnit.hpp>
-#include "Eigen/Geometry"
+#include "Eigen/Eigen/Geometry"
 
 #define NUMBER_OF_ARM_MOTORS 6
 #define NUMBER_OF_HAND_MOTORS 3
