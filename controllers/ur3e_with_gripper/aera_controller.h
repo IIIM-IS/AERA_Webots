@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
-#include "tcp_connection.h"
+#include "AERA_Protobuf/tcp_connection.h"
 #include "AERA_Protobuf/utils.h"
 #include "AERA_Protobuf/tcp_data_message.pb.h"
 #include <webots/Supervisor.hpp>
