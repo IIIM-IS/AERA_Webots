@@ -178,6 +178,13 @@ namespace tcp_io_device {
     ~TCPConnection();
 
     /**
+    * Listen on the passed port and wait for a client to connect.
+    * \param port The port used to communicate with the client.
+    * \return 0 for success, nonzero for error.
+    */
+    int listenAndAwaitConnection(std::string port);
+
+    /**
     * Opens a socket to connect to a client on the passed port.
     * \param host The host address used to communicate with the server.
     * \param port The port used to communicate with the server.

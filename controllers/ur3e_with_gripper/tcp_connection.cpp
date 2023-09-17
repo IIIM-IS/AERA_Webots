@@ -85,6 +85,87 @@ namespace tcp_io_device {
     }
   }
 
+  int TCPConnection::listenAndAwaitConnection(std::string port)
+  {
+    WSADATA wsa_data;
+    int err;
+
+    err = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    if (err != 0) {
+      std::cout << "ERROR: WSAStartup failed with error: " << err << std::endl;
+      return 1;
+    }
+    struct addrinfo* result = NULL;
+    struct addrinfo hints;
+
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    std::cout << "> INFO: Resolving server address and port" << std::endl;
+    // Resolve the server address and port
+    err = getaddrinfo(NULL, port.c_str(), &hints, &result);
+    if (err != 0) {
+      std::cout << "ERROR: getaddrinfo failed with error: " << err << std::endl;
+      WSACleanup();
+      return 1;
+    }
+
+    std::cout << "> INFO: Creating socket for connection to client" << std::endl;
+
+    // Create a SOCKET for connecting to client
+    SOCKET listen_socket = INVALID_SOCKET;
+    listen_socket = ::socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (listen_socket == INVALID_SOCKET) {
+      std::cout << "ERROR: Socker failed with error: " << WSAGetLastError() << std::endl;
+      freeaddrinfo(result);
+      WSACleanup();
+      return 1;
+    }
+
+    std::cout << "> INFO: Setting up TCP listening socket" << std::endl;
+    // Setup the TCP listening socket
+    err = ::bind(listen_socket, result->ai_addr, (int)result->ai_addrlen);
+    if (err == SOCKET_ERROR) {
+      std::cout << "ERROR: Bind failed with error: " << WSAGetLastError() << std::endl;
+      freeaddrinfo(result);
+      closesocket(listen_socket);
+      WSACleanup();
+      return 1;
+    }
+
+    freeaddrinfo(result);
+
+    // Wait for a client to conenct to the socket.
+    err = listen(listen_socket, SOMAXCONN);
+    if (err == SOCKET_ERROR) {
+      std::cout << "ERROR: Listen failed with error: " << WSAGetLastError() << std::endl;
+      closesocket(listen_socket);
+      WSACleanup();
+      return 1;
+    }
+
+
+    std::cout << "> INFO: Waiting to accept client socket on port " << port << std::endl;
+    // Accept a client socket
+    tcp_socket_ = ::accept(listen_socket, NULL, NULL);
+    if (tcp_socket_ == INVALID_SOCKET) {
+      std::cout << "ERROR: Accepting client failed with error: " << WSAGetLastError() << std::endl;
+      closesocket(listen_socket);
+      WSACleanup();
+      return 1;
+    }
+
+    // No longer need server listen socket
+    closesocket(listen_socket);
+
+    std::cout << "> INFO: TCP connection successfully established" << std::endl;
+
+    return 0;
+  }
+
   int TCPConnection::establishConnection(std::string host, std::string port) {
 
     WSADATA wsaData;
