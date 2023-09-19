@@ -101,7 +101,6 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
-    <ClCompile Include="tcp_connection.cpp" />
     <ClCompile Include="aera_controller.cpp" />
     <ClCompile Include="ur3e_controller.cpp" />
     <ClCompile Include="math_lib.cpp" />
@@ -110,6 +109,9 @@
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
     <ClCompile Include="toml_parser.cpp" />
+    <ClCompile Include="AERA_Protobuf\tcp_connection.cpp">
+      <Filter>AERA_Protobuf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
@@ -120,7 +122,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tcp_connection.h" />
     <ClInclude Include="aera_controller.h" />
     <ClInclude Include="ur3e_controller.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
@@ -134,6 +135,9 @@
     <ClInclude Include="tip_camera.h" />
     <ClInclude Include="toml.h" />
     <ClInclude Include="toml_parser.h" />
+    <ClInclude Include="AERA_Protobuf\tcp_connection.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ur3e_with_gripper.vcxproj.filter" />
