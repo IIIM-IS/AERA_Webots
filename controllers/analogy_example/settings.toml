@@ -1,0 +1,61 @@
+title = "Analogy Example"
+
+
+[[entities]]
+name = "h"
+properties = [ "position", "holding" ]
+commands = [ "move", "grab_type1", "grab_type2", "release" ]
+
+[[entities]]
+name = "cube_1"
+properties = [ "position" ]
+
+[[entities]]
+name = "cube_2"
+properties = [ "position" ]
+
+
+[[entities]]
+name = "cyl_1"
+properties = [ "position" ]
+
+
+[[properties]]
+name = "position"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[properties]]
+name = "holding"
+type = "communication_id"
+dimensionality = [1]
+opcode_handle = "set"
+
+
+[[commands]]
+name = "move"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[commands]]
+name = "grab_type1"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "grab_type2"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "release"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "rotate"
+type = "double"
+dimensionality = [4]
+opcode_handle = "quat"

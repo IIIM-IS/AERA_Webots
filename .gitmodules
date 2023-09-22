@@ -4,3 +4,11 @@
 [submodule "controllers/ur3e_with_gripper/Eigen"]
 	path = controllers/ur3e_with_gripper/Eigen
 	url = https://gitlab.com/libeigen/eigen.git
+	branch = 3.4
+[submodule "controllers\\analogy_example\\AERA_Protobuf"]
+	path = controllers/analogy_example/AERA_Protobuf
+	url = https://github.com/IIIM-IS/AERA_Protobuf.git
+[submodule "controllers\\analogy_example\\Eigen"]
+	path = controllers/analogy_example/Eigen
+	url = https://gitlab.com/libeigen/eigen.git
+	branch = 3.4
