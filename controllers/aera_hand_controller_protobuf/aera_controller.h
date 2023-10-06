@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
-#include "tcp_connection.h"
-#include "AERA_Protobuf/utils.h"
-#include "AERA_Protobuf/tcp_data_message.pb.h"
+#include "../../submodules/AERA_Protobuf/tcp_connection.h"
+#include "../../submodules/AERA_Protobuf/utils.h"
+#include "../../submodules/AERA_Protobuf/tcp_data_message.pb.h"
 #include <webots/Supervisor.hpp>
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
