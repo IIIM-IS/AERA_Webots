@@ -156,8 +156,8 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc" />
-    <ClCompile Include="aera_hand_controller_protobuf.cpp" />
-    <ClCompile Include="hand_grab_sphere_controller.cpp" />
+    <ClCompile Include="hand_grab_sphere_NED_1D_controller_main.cpp" />
+    <ClCompile Include="hand_grab_sphere_NED_1D_controller.cpp" />
     <ClCompile Include="aera_controller.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -165,7 +165,7 @@
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h" />
     <ClInclude Include="aera_controller.h" />
-    <ClInclude Include="hand_grab_sphere_controller.h" />
+    <ClInclude Include="hand_grab_sphere_NED_1D_controller.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\submodules\AERA_Protobuf\README.md" />
