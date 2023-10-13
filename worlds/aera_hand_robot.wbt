@@ -77,6 +77,6 @@ DEF Ned Ned {
   hidden translation_9 0.01455 -0.024399964000001075 -0.020065999731876526
   translation -0.001 -0.00517642 0
   rotation 0 0 1 3.14159
-  controller "aera_hand_controller_protobuf"
+  controller "hand_grab_sphere_NED_1D_controller"
   supervisor TRUE
 }

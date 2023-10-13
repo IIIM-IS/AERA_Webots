@@ -9,7 +9,7 @@
 // and/or to add some other includes
 #include <webots/Robot.hpp>
 
-#include "hand_grab_sphere_controller.h"
+#include "hand_grab_sphere_NED_1D_controller.h"
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
