@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 #include "toml.h"
-#include "AERA_Protobuf/tcp_data_message.pb.h"
+#include "../../submodules/AERA_Protobuf/tcp_data_message.pb.h"
 
 namespace toml_parser {
 

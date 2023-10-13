@@ -2,8 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="aera_controller.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_connection.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc" />
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="toml_parser.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
@@ -108,28 +106,47 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp">
+      <Filter>AERA_Protobuf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc">
+      <Filter>AERA_Protobuf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aera_controller.h" />
-    <ClInclude Include="AERA_Protobuf\tcp_connection.h" />
-    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h" />
-    <ClInclude Include="AERA_Protobuf\utils.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
     <ClInclude Include="toml.h" />
     <ClInclude Include="toml_parser.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="ur3e_controller.h" />
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="AERA_Protobuf\README.md" />
-    <None Include="AERA_Protobuf\tcp_data_message.proto" />
     <None Include="settings.toml" />
     <None Include="analogy_example.vcxproj.filter" />
+    <None Include="..\..\submodules\AERA_Protobuf\README.md">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
+    <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
       <UniqueIdentifier>{e85f8635-4bdb-41b3-9dbf-237de8888c9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AERA_Protobuf">
+      <UniqueIdentifier>{d7722132-9eef-4f71-a407-a7c81272df3a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
