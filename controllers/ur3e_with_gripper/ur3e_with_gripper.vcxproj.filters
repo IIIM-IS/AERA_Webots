@@ -105,11 +105,11 @@
     <ClCompile Include="ur3e_controller.cpp" />
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc">
+    <ClCompile Include="toml_parser.cpp" />
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
-    <ClCompile Include="toml_parser.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_connection.cpp">
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
   </ItemGroup>
@@ -118,7 +118,7 @@
       <UniqueIdentifier>{c9999f84-ed8c-459e-8e0a-12de62ba8457}</UniqueIdentifier>
     </Filter>
     <Filter Include="AERA_Protobuf">
-      <UniqueIdentifier>{9fb59822-e292-4f5f-a63b-b107af4ea017}</UniqueIdentifier>
+      <UniqueIdentifier>{b91cada9-df5f-40b2-8cb5-2534b353b757}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -126,27 +126,27 @@
     <ClInclude Include="ur3e_controller.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="math_lib.h" />
-    <ClInclude Include="AERA_Protobuf\utils.h">
-      <Filter>AERA_Protobuf</Filter>
-    </ClInclude>
-    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h">
-      <Filter>AERA_Protobuf</Filter>
-    </ClInclude>
     <ClInclude Include="tip_camera.h" />
     <ClInclude Include="toml.h" />
     <ClInclude Include="toml_parser.h" />
-    <ClInclude Include="AERA_Protobuf\tcp_connection.h">
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.h">
+      <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h">
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ur3e_with_gripper.vcxproj.filter" />
-    <None Include="AERA_Protobuf\tcp_data_message.proto">
-      <Filter>AERA_Protobuf</Filter>
-    </None>
-    <None Include="AERA_Protobuf\README.md">
-      <Filter>AERA_Protobuf</Filter>
-    </None>
     <None Include="settings.toml" />
+    <None Include="..\..\submodules\AERA_Protobuf\README.md">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
+    <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto">
+      <Filter>AERA_Protobuf</Filter>
+    </None>
   </ItemGroup>
 </Project>

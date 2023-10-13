@@ -1,7 +1,7 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include "Eigen/Eigen/Dense"
+#include "../../submodules/Eigen/Eigen/Dense"
 
 namespace mathLib
 {
