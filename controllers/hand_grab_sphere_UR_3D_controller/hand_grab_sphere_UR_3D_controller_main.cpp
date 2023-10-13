@@ -8,7 +8,7 @@
 // <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
 // and/or to add some other includes
 #include <webots/Robot.hpp>
-#include "ur3e_controller.h"
+#include "hand_grab_sphere_UR_3D_controller.h"
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;

@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{B2AA53B0-6416-4406-8FF5-6D43BBA8B305}</ProjectGuid>
-    <RootNamespace>ur3e_with_gripper</RootNamespace>
+    <RootNamespace>hand_grab_sphere_UR_3D_controller</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -110,7 +110,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(WEBOTS_HOME)/include/controller/c;$(WEBOTS_HOME)/include/controller/cpp;C:\Users\leonard20\Documents\GitHub\AERA_Webots\controllers\ur3e_with_gripper\Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WEBOTS_HOME)/include/controller/c;$(WEBOTS_HOME)/include/controller/cpp</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;ENABLE_PROTOBUF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -160,8 +160,8 @@
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="toml_parser.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
-    <ClCompile Include="ur3e_controller.cpp" />
-    <ClCompile Include="ur3e_with_gripper.cpp" />
+    <ClCompile Include="hand_grab_sphere_UR_3D_controller.cpp" />
+    <ClCompile Include="hand_grab_sphere_UR_3D_controller_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h" />
@@ -173,13 +173,13 @@
     <ClInclude Include="toml.h" />
     <ClInclude Include="toml_parser.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
-    <ClInclude Include="ur3e_controller.h" />
+    <ClInclude Include="hand_grab_sphere_UR_3D_controller.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\submodules\AERA_Protobuf\README.md" />
     <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto" />
     <None Include="settings.toml" />
-    <None Include="ur3e_with_gripper.vcxproj.filter" />
+    <None Include="hand_grab_sphere_UR_3D_controller.vcxproj.filter" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
