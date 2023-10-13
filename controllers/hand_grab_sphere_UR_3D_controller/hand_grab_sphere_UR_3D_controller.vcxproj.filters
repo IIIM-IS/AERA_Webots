@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="ur3e_with_gripper.cpp" />
+    <ClCompile Include="hand_grab_sphere_UR_3D_controller_main.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Accelerometer.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
@@ -102,7 +102,7 @@
       <Filter>Webots</Filter>
     </ClCompile>
     <ClCompile Include="aera_controller.cpp" />
-    <ClCompile Include="ur3e_controller.cpp" />
+    <ClCompile Include="hand_grab_sphere_UR_3D_controller.cpp" />
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
     <ClCompile Include="toml_parser.cpp" />
@@ -123,7 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aera_controller.h" />
-    <ClInclude Include="ur3e_controller.h" />
+    <ClInclude Include="hand_grab_sphere_UR_3D_controller.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
@@ -140,7 +140,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ur3e_with_gripper.vcxproj.filter" />
+    <None Include="hand_grab_sphere_UR_3D_controller.vcxproj.filter" />
     <None Include="settings.toml" />
     <None Include="..\..\submodules\AERA_Protobuf\README.md">
       <Filter>AERA_Protobuf</Filter>

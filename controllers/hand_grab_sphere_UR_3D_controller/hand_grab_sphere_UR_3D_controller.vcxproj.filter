@@ -18,7 +18,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ur3e_with_gripper.cpp">
+    <ClCompile Include="hand_grab_sphere_UR_3D_controller_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Accelerometer.cpp">
