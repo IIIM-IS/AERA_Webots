@@ -35,7 +35,7 @@ CircleArena {
   wallHeight 0.05
 }
 DEF UR10e UR10e {
-  controller "ur3e_with_gripper"
+  controller "hand_grab_sphere_UR_3D_controller"
   supervisor TRUE
   selfCollision FALSE
   toolSlot [
