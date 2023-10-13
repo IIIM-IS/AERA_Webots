@@ -154,9 +154,9 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Speaker.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Supervisor.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp" />
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp" />
+    <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc" />
     <ClCompile Include="aera_controller.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_connection.cpp" />
-    <ClCompile Include="AERA_Protobuf\tcp_data_message.pb.cc" />
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="toml_parser.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
@@ -164,10 +164,10 @@
     <ClCompile Include="ur3e_with_gripper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h" />
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.h" />
+    <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h" />
     <ClInclude Include="aera_controller.h" />
-    <ClInclude Include="AERA_Protobuf\tcp_connection.h" />
-    <ClInclude Include="AERA_Protobuf\tcp_data_message.pb.h" />
-    <ClInclude Include="AERA_Protobuf\utils.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
     <ClInclude Include="toml.h" />
@@ -176,8 +176,8 @@
     <ClInclude Include="ur3e_controller.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="AERA_Protobuf\README.md" />
-    <None Include="AERA_Protobuf\tcp_data_message.proto" />
+    <None Include="..\..\submodules\AERA_Protobuf\README.md" />
+    <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto" />
     <None Include="settings.toml" />
     <None Include="ur3e_with_gripper.vcxproj.filter" />
   </ItemGroup>
