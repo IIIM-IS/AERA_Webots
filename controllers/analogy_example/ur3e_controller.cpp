@@ -37,9 +37,11 @@ UR3eController::UR3eController() : AERAController() {
   hand_sensors_[1] = robot_->getPositionSensor("finger_2_joint_1_sensor");
   hand_sensors_[2] = robot_->getPositionSensor("finger_middle_joint_1_sensor");
 
-  objects_[0] = robot_->getFromDef("green_box");
-  objects_[1] = robot_->getFromDef("red_box");
-  objects_[2] = robot_->getFromDef("blue_box");
+  objects_[0] = robot_->getFromDef("small_cube");
+  objects_[1] = robot_->getFromDef("large_cube");
+  objects_[2] = robot_->getFromDef("large_sphere");
+  objects_[3] = robot_->getFromDef("small_sphere");
+  objects_[4] = robot_->getFromDef("large_cylinder");
 
 
   gps_sensor_ = robot_->getGPS("gps_tip");
@@ -65,12 +67,12 @@ UR3eController::UR3eController() : AERAController() {
 
   tip_camera_->enable(robot_time_step_);
 
-  hand_closed_2_values_ = { 0.4, 0.4, 0.4 };
-  hand_closed_1_values_ = { 0.4, 0.4, 0.4 };
+  hand_closed_2_values_ = { 0.5, 0.5, 0.5 };
+  hand_closed_1_values_ = { 0.6, 0.6, 0.6 };
   for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
     double center = hand_motors_[i]->getMaxPosition() - hand_motors_[i]->getMinPosition();
     //hand_default_values_.push_back(center);
-    hand_default_values_.push_back(hand_motors_[i]->getMinPosition());
+    hand_default_values_.push_back(0.45);
     hand_open_values_.push_back(hand_motors_[i]->getMinPosition());
   }
 }
@@ -175,15 +177,35 @@ int UR3eController::start() {
         data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
       }
-      else if (entity == "cyl_1") {
-        if (prop == "position") {
-          std::vector<double> box_pos = obj_xyz_positions[2];
+    }
+    else if (entity == "sphere_1") {
+      if (prop == "position") {
+        std::vector<double> box_pos = obj_xyz_positions[2];
 #if Z_0
-          data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
+        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
 #else
-          data_to_send.push_back(createMsgData<double>(*o, box_pos));
+        data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
-        }
+      }
+    }
+    else if (entity == "sphere_2") {
+      if (prop == "position") {
+        std::vector<double> box_pos = obj_xyz_positions[3];
+#if Z_0
+        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
+#else
+        data_to_send.push_back(createMsgData<double>(*o, box_pos));
+#endif
+      }
+    }
+    else if (entity == "cyl_1") {
+      if (prop == "position") {
+        std::vector<double> box_pos = obj_xyz_positions[4];
+#if Z_0
+        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
+#else
+        data_to_send.push_back(createMsgData<double>(*o, box_pos));
+#endif
       }
     }
   }
@@ -210,7 +232,7 @@ void UR3eController::init() {
 
   for (size_t i = 0; i < NUMBER_OF_HAND_MOTORS; ++i)
   {
-    hand_motors_[i]->setPosition(hand_motors_[i]->getMinPosition());
+    hand_motors_[i]->setPosition(hand_default_values_[i]);
   }
   double random_positions[NUMBER_OF_BOXES][3];
 
@@ -220,8 +242,12 @@ void UR3eController::init() {
   random_positions[0][1] = 1;
   random_positions[1][0] = -0.5;
   random_positions[1][1] = 1;
-  random_positions[2][0] = 0;
-  random_positions[2][1] = -1;
+  random_positions[2][0] = -1.2;
+  random_positions[2][1] = -0.1;
+  random_positions[3][0] = -1.1;
+  random_positions[3][1] = -0.4;
+  random_positions[4][0] = -1;
+  random_positions[4][1] = -0.71;
 #endif
 
   for (size_t i = 0; i < NUMBER_OF_BOXES; i++)
@@ -319,6 +345,10 @@ void UR3eController::run() {
           else if (i == 1)
             holding_id = string_id_mapping_["cube_2"];
           else if (i == 2)
+            holding_id = string_id_mapping_["sphere_1"];
+          else if (i == 3)
+            holding_id = string_id_mapping_["sphere_2"];
+          else if (i == 4)
             holding_id = string_id_mapping_["cyl_1"];
           break;
         }
@@ -369,7 +399,7 @@ void UR3eController::run() {
 #endif
             continue;
           }
-          else if (entity == "cyl_1") {
+          else if (entity == "sphere_1") {
 #if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = box_xyz_positions[2][2];
             box_xyz_positions[2][2] = 0;
@@ -377,6 +407,28 @@ void UR3eController::run() {
             msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[2]));
 #if Z_0
             box_xyz_positions[2][2] = save_z;
+#endif
+            continue;
+          }
+          else if (entity == "sphere_2") {
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = box_xyz_positions[3][2];
+            box_xyz_positions[3][2] = 0;
+#endif
+            msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[3]));
+#if Z_0
+            box_xyz_positions[3][2] = save_z;
+#endif
+            continue;
+          }
+          else if (entity == "cyl_1") {
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = box_xyz_positions[4][2];
+            box_xyz_positions[4][2] = 0;
+#endif
+            msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[4]));
+#if Z_0
+            box_xyz_positions[4][2] = save_z;
 #endif
             continue;
           }
@@ -408,7 +460,7 @@ void UR3eController::executeCommand() {
     break;
   case UR3eController::MOVE_ARM:
     if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
-      state_ = HAND_TO_DEFAULT;
+      state_ = IDLE;
       return;
     }
     target_joint_angles_ = getJointAnglesFromXY(target_h_position_, 1);
@@ -418,7 +470,7 @@ void UR3eController::executeCommand() {
         state_ = MOVE_ARM;
         break;
       }
-      state_ = HAND_TO_DEFAULT;
+      state_ = IDLE;
     }
     return;
   case UR3eController::OPEN_BEFORE_GRAB_2:
@@ -428,8 +480,10 @@ void UR3eController::executeCommand() {
         state_ = OPEN_BEFORE_GRAB_2;
         break;
       }
+      hand_state_ = HAND_OPEN_2;
       state_ = MOVE_DOWN_CLOSE_2;
     }
+    return;
   case UR3eController::MOVE_DOWN_CLOSE_1:
     if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
       state_ = MOVE_UP;
@@ -472,22 +526,39 @@ void UR3eController::executeCommand() {
         state_ = MOVE_DOWN_OPEN;
         break;
       }
-      state_ = OPEN;
+      if (hand_state_ == HAND_CLOSED_1)
+        state_ = OPEN_1;
+      else if (hand_state_ == HAND_CLOSED_2)
+        state_ = OPEN_2;
+      else
+        state_ = OPEN_1;
     }
     return;
-  case UR3eController::OPEN:
+  case UR3eController::OPEN_1:
     for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
       if (fabs(hand_default_values_[i] - hand_sensors_[i]->getValue()) > gripper_accuracy_error_) {
         setHandAngles(hand_default_values_);
-        state_ = OPEN;
+        state_ = OPEN_1;
         break;
       }
+      hand_state_ = HAND_OPEN_1;
+      state_ = MOVE_UP_AFTER_RELEASE;
+    }
+    return;
+  case UR3eController::OPEN_2:
+    for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
+      if (fabs(hand_open_values_[i] - hand_sensors_[i]->getValue()) > gripper_accuracy_error_) {
+        setHandAngles(hand_open_values_);
+        state_ = OPEN_2;
+        break;
+      }
+      hand_state_ = HAND_OPEN_2;
       state_ = MOVE_UP_AFTER_RELEASE;
     }
     return;
   case UR3eController::CLOSE_GRAB_1:
     if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
-      state_ = OPEN;
+      state_ = OPEN_1;
       return;
     }
     for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
@@ -496,12 +567,13 @@ void UR3eController::executeCommand() {
         state_ = CLOSE_GRAB_1;
         break;
       }
+      hand_state_ = HAND_CLOSED_1;
       state_ = MOVE_UP;
     }
     return;
   case UR3eController::CLOSE_GRAB_2:
     if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
-      state_ = OPEN;
+      state_ = OPEN_2;
       return;
     }
     for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
@@ -510,6 +582,7 @@ void UR3eController::executeCommand() {
         state_ = CLOSE_GRAB_2;
         break;
       }
+      hand_state_ = HAND_CLOSED_2;
       state_ = MOVE_UP;
     }
     return;
@@ -521,7 +594,10 @@ void UR3eController::executeCommand() {
         state_ = MOVE_UP;
         break;
       }
-      state_ = IDLE;
+      if (hand_state_ == HAND_OPEN_1)
+        state_ = HAND_TO_DEFAULT;
+      else
+        state_ = IDLE;
     }
     return;
   case UR3eController::MOVE_UP_AFTER_RELEASE:
@@ -529,10 +605,13 @@ void UR3eController::executeCommand() {
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
       if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
         setJointAngles(target_joint_angles_);
-        state_ = MOVE_UP;
+        state_ = MOVE_UP_AFTER_RELEASE;
         break;
       }
-      state_ = HAND_TO_DEFAULT;
+      if (hand_state_ == HAND_OPEN_2)
+        state_ = HAND_TO_DEFAULT;
+      else
+        state_ = IDLE;
     }
     return;
   case UR3eController::HAND_TO_DEFAULT:
@@ -542,6 +621,7 @@ void UR3eController::executeCommand() {
         state_ = HAND_TO_DEFAULT;
         break;
       }
+      hand_state_ = HAND_OPEN_1;
       state_ = IDLE;
     }
     return;

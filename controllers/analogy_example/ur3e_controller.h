@@ -14,7 +14,7 @@
 #define NUMBER_OF_KINEMATIC_SOLUTIONS 8
 #define SOLUTION_TO_CHOOSE 3
 
-#define NUMBER_OF_BOXES 3
+#define NUMBER_OF_BOXES 5
 #define MIN_DIST 0.4
 #define MAX_DIST 1.3
 
@@ -59,14 +59,14 @@ protected:
 
   int max_exec_time_steps_;
 
-  const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"grab", 1'500}, {"release", 1'500}, {"default", 10'000} };
+  const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"grab_type1", 1'500}, {"grab_type2", 1'500}, {"release", 1'500}, {"default", 10'000} };
 
   void handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) override;
 
   const double motor_offsets_[NUMBER_OF_ARM_MOTORS] = { 0.0, -M_PI / 2, 0.0, -M_PI / 2, 0.0, 0.0 };
 
-  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.0, 1.0, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05} };
-  const double box_rotations_[NUMBER_OF_BOXES][4] = { {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0} };
+  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.0, 1.0, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05}, {-0.4, -1.0, 0.05}, {-0.4, 1.0, 0.05} };
+  const double box_rotations_[NUMBER_OF_BOXES][4] = { {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0} };
 
 private:
 
@@ -79,7 +79,8 @@ private:
     MOVE_DOWN_CLOSE_1,
     MOVE_DOWN_CLOSE_2,
     MOVE_DOWN_OPEN,
-    OPEN,
+    OPEN_1,
+    OPEN_2,
     CLOSE_GRAB_1,
     CLOSE_GRAB_2,
     MOVE_UP,
@@ -87,7 +88,15 @@ private:
     HAND_TO_DEFAULT
   };
 
+  enum HandState {
+    HAND_OPEN_1,
+    HAND_OPEN_2,
+    HAND_CLOSED_1,
+    HAND_CLOSED_2
+  };
+
   State state_;
+  HandState hand_state_;
 
   std::vector<double> hand_xyz_pos_;
   std::vector<double> target_h_position_;
