@@ -10,6 +10,7 @@ public:
   int start() override;
 
   void init();
+  void initAfterFailedRelease();
 
   void run() override;
 
@@ -24,7 +25,7 @@ protected:
 
 private:
 
-  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, CLOSE_GRIPPER, OPEN_GRIPPER, STOPPING };
+  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_DOWN_OPEN_FAIL, MOVE_UP, MOVE_ARM, CLOSE_GRIPPER, OPEN_GRIPPER, STOPPING };
 
   State state_;
 
@@ -37,6 +38,7 @@ private:
 
   const double arm_up_ = 0.65;
   const double arm_down_ = 0.8;
+  const double arm_down_fail_ = 0.72;
   const double jaw_open_ = 0.01;
   const double jaw_closed_ = -0.0019;
 
