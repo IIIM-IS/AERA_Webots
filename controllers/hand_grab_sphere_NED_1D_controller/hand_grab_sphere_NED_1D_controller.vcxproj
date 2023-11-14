@@ -159,6 +159,7 @@
     <ClCompile Include="hand_grab_sphere_NED_1D_controller_main.cpp" />
     <ClCompile Include="hand_grab_sphere_NED_1D_controller.cpp" />
     <ClCompile Include="aera_controller.cpp" />
+    <ClCompile Include="toml_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h" />
@@ -166,10 +167,13 @@
     <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h" />
     <ClInclude Include="aera_controller.h" />
     <ClInclude Include="hand_grab_sphere_NED_1D_controller.h" />
+    <ClInclude Include="toml.h" />
+    <ClInclude Include="toml_parser.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\submodules\AERA_Protobuf\README.md" />
     <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto" />
+    <None Include="settings.toml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

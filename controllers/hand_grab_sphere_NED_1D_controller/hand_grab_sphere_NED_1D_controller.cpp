@@ -1,4 +1,5 @@
 #include "hand_grab_sphere_NED_1D_controller.h"
+#include "toml_parser.h"
 
 #define DEBUG 1
 
@@ -43,20 +44,40 @@ HandGrabSphereController::~HandGrabSphereController() {
 }
 
 int HandGrabSphereController::start() {
-  std::cout << "Starting HandGrabSphereController. Initializing entities, objects, and commands" << std::endl;
+
+  toml_parser::TOMLParser parser;
+  parser.parse("settings.toml");
+
   std::vector<tcp_io_device::MetaData> objects;
   std::vector<tcp_io_device::MetaData> commands;
-  fillIdStringMaps({ "h", "c", "s", "position", "holding", "grab", "release", "move" });
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["holding"], tcp_io_device::VariableDescription_DataType_COMMUNICATION_ID, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["c"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  objects.push_back(tcp_io_device::MetaData(string_id_mapping_["s"], string_id_mapping_["position"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
-  
 
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["grab"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["release"], tcp_io_device::VariableDescription_DataType_BYTES, { 1 }));
-  commands.push_back(tcp_io_device::MetaData(string_id_mapping_["h"], string_id_mapping_["move"], tcp_io_device::VariableDescription_DataType_DOUBLE, { 1 }));
 
+  std::vector<std::string> entity_names = parser.entityNames();
+  std::vector<std::string> property_names = parser.propertyNames();
+  std::vector<std::string> command_names = parser.commandNames();
+
+  std::vector<std::string> object_names;
+  object_names.resize(entity_names.size() + property_names.size() + command_names.size());
+  // Add entities to the vector.
+  object_names.insert(object_names.end(), entity_names.begin(), entity_names.end());
+  // Add properties to the vector
+  object_names.insert(object_names.end(), property_names.begin(), property_names.end());
+  // Add commands to the vector
+  object_names.insert(object_names.end(), command_names.begin(), command_names.end());
+
+  // Generate communication ids by filling the string_id_mapping_
+  fillIdStringMaps(object_names);
+
+  std::map<std::string, toml_parser::entity> entity_map = parser.entities();
+  for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
+    auto e = e_it->second;
+    for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
+      objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
+    }
+    for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
+      commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
+    }
+  }
   sendSetupMessage(objects, commands);
   waitForStartMsg();
 
@@ -74,9 +95,9 @@ int HandGrabSphereController::start() {
   std::cout << "Sphere Position: " << s_position << std::endl;
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-  data_to_send.push_back(createMsgData<double>(objects[0], { h_position }));
-  data_to_send.push_back(createMsgData<communication_id_t>(objects[1], { -1 }));
-  data_to_send.push_back(createMsgData<double>(objects[2], { c_position }));
+  data_to_send.push_back(createMsgData<double>(objects[0], { c_position }));
+  data_to_send.push_back(createMsgData<double>(objects[1], { h_position }));
+  data_to_send.push_back(createMsgData<communication_id_t>(objects[2], { -1 }));
   data_to_send.push_back(createMsgData<double>(objects[3], { s_position }));
   sendDataMessage(data_to_send);
   state_ = IDLE;
@@ -113,13 +134,19 @@ void HandGrabSphereController::init() {
   cube_->getField("translation")->setSFVec3f(cube_translation_);
 }
 
+void HandGrabSphereController::initAfterFailedRelease() {
+  sphere_->resetPhysics();
+  sphere_->getField("rotation")->setSFRotation(sphere_rotation_);
+  sphere_->getField("translation")->setSFVec3f(sphere_translation_);
+}
+
 void HandGrabSphereController::run() {
   // AERA sends the first command at 100ms.
-  int aera_us = 100'000;
+  int aera_us = 100'000 / robot_time_step_;
 #ifdef DEBUG
   diagnostic_mode_ = true;
 #endif // DEBUG
-  int receive_deadline = aera_us + 65000;
+  int receive_deadline = aera_us + 65000 / robot_time_step_;
   std::unique_ptr<tcp_io_device::TCPMessage> pending_msg;
   while (robot_->step(robot_time_step_) != -1) {
     if (!aera_started_) {
@@ -152,12 +179,8 @@ void HandGrabSphereController::run() {
 
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
-    if (aera_us == 1800 * 1000 + 40000) {
-      //reset
-      init();
-    }
     // Don't send the state on the first pass, but wait to arrive at the initial position.
-    if (aera_us > 100'000 && aera_us % 100'000 == 0) {
+    if (aera_us > 100'000 / robot_time_step_ && (aera_us % (int)(100'000 / robot_time_step_)) == 0) {
       const double* c_translation = cube_->getField("translation")->getSFVec3f();
       const double* s_translation = sphere_->getField("translation")->getSFVec3f();
       double c_position = getPosition(c_translation);
@@ -203,11 +226,11 @@ void HandGrabSphereController::run() {
       }
       sendDataMessage(msg_data);
 
-      receive_deadline = aera_us + 65000;
+      receive_deadline = aera_us + 65000 / robot_time_step_;
     }
     executeCommand();
-    int next_aera_us = aera_us + robot_time_step_ * 100;
-    if (diagnostic_mode_ && state_ != IDLE && (next_aera_us % 100'000 == 0)) {
+    int next_aera_us = aera_us + robot_time_step_ * 100 / robot_time_step_;
+    if (diagnostic_mode_ && state_ != IDLE && (next_aera_us % (int)(100'000 / robot_time_step_) == 0)) {
       // In the next interation, we would send the state, but the robot is still executing a command.
       // In diagnistic mode, don't advance aera_us but wait for IDLE until we send the state.
     }
@@ -234,6 +257,12 @@ void HandGrabSphereController::executeCommand() {
     joint_2_->setPosition(arm_down_);
     if (abs(arm_down_ - joint_2_sensor_->getValue()) <= position_accuracy_error_) {
       state_ = OPEN_GRIPPER;
+    }
+    return;
+  case MOVE_DOWN_OPEN_FAIL:
+    joint_2_->setPosition(arm_down_fail_);
+    if (abs(arm_down_fail_ - joint_2_sensor_->getValue()) <= position_accuracy_error_) {
+      state_ = MOVE_UP;
     }
     return;
   case MOVE_UP:
@@ -300,7 +329,14 @@ void HandGrabSphereController::handleDataMsg(std::vector<tcp_io_device::MsgData>
     }
     else if (id_name == "release")
     {
-      state_ = MOVE_DOWN_OPEN;
+      double c_position = getPosition(cube_->getField("translation")->getSFVec3f());
+      double s_position = getPosition(sphere_->getField("translation")->getSFVec3f());
+      if (c_position == s_position) {
+        state_ = MOVE_DOWN_OPEN_FAIL; // In case of release while being at the same position as the sphere, only attempt to release.
+      }
+      else {
+        state_ = MOVE_DOWN_OPEN;
+      }
     }
     else if (id_name == "move")
     {

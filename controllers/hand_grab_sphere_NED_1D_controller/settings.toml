@@ -1,0 +1,45 @@
+title = "UR Demo"
+
+
+[[entities]]
+name = "h"
+properties = [ "position", "holding" ]
+commands = [ "move", "grab", "release" ]
+
+[[entities]]
+name = "c"
+properties = [ "position" ]
+
+[[entities]]
+name = "s"
+properties = [ "position" ]
+
+
+[[properties]]
+name = "position"
+type = "double"
+dimensionality = [1]
+opcode_handle = ""
+
+[[properties]]
+name = "holding"
+type = "communication_id"
+dimensionality = [1]
+opcode_handle = "set"
+
+
+[[commands]]
+name = "move"
+type = "double"
+dimensionality = [1]
+opcode_handle = ""
+
+[[commands]]
+name = "grab"
+type = "communication_id"
+dimensionality = [0]
+
+[[commands]]
+name = "release"
+type = "communication_id"
+dimensionality = [0]
