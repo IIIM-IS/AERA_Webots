@@ -101,16 +101,20 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
-    <ClCompile Include="aera_controller.cpp" />
     <ClCompile Include="hand_grab_sphere_UR_3D_controller.cpp" />
     <ClCompile Include="math_lib.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
-    <ClCompile Include="toml_parser.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc">
       <Filter>AERA_Protobuf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\AERA_controller_base\aera_controller.cpp">
+      <Filter>AERA_controller_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\AERA_controller_base\toml_parser.cpp">
+      <Filter>AERA_controller_base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -120,15 +124,15 @@
     <Filter Include="AERA_Protobuf">
       <UniqueIdentifier>{b91cada9-df5f-40b2-8cb5-2534b353b757}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AERA_controller_base">
+      <UniqueIdentifier>{b6918cbd-0492-4577-8ffd-37027d1bd77c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="aera_controller.h" />
     <ClInclude Include="hand_grab_sphere_UR_3D_controller.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
-    <ClInclude Include="toml.h" />
-    <ClInclude Include="toml_parser.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h">
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
@@ -137,6 +141,15 @@
     </ClInclude>
     <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h">
       <Filter>AERA_Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\AERA_controller_base\aera_controller.h">
+      <Filter>AERA_controller_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\AERA_controller_base\toml.h">
+      <Filter>AERA_controller_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\AERA_controller_base\toml_parser.h">
+      <Filter>AERA_controller_base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

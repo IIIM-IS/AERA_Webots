@@ -100,7 +100,6 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
-    <ClCompile Include="aera_controller.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
@@ -109,7 +108,12 @@
     </ClCompile>
     <ClCompile Include="hand_grab_sphere_NED_1D_controller_main.cpp" />
     <ClCompile Include="hand_grab_sphere_NED_1D_controller.cpp" />
-    <ClCompile Include="toml_parser.cpp" />
+    <ClCompile Include="..\AERA_controller_base\aera_controller.cpp">
+      <Filter>AERA_controller_base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\AERA_controller_base\toml_parser.cpp">
+      <Filter>AERA_controller_base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
@@ -118,9 +122,11 @@
     <Filter Include="AERA_Protobuf">
       <UniqueIdentifier>{5a0c5025-1013-4da5-9116-76d93ba62069}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AERA_controller_base">
+      <UniqueIdentifier>{5405b8cc-fb43-41a7-a013-eec515766060}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="aera_controller.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h">
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
@@ -131,8 +137,15 @@
       <Filter>AERA_Protobuf</Filter>
     </ClInclude>
     <ClInclude Include="hand_grab_sphere_NED_1D_controller.h" />
-    <ClInclude Include="toml_parser.h" />
-    <ClInclude Include="toml.h" />
+    <ClInclude Include="..\AERA_controller_base\aera_controller.h">
+      <Filter>AERA_controller_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\AERA_controller_base\toml.h">
+      <Filter>AERA_controller_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\AERA_controller_base\toml_parser.h">
+      <Filter>AERA_controller_base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\submodules\AERA_Protobuf\README.md">

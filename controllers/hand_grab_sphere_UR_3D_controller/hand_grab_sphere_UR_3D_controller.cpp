@@ -1,5 +1,5 @@
 #include "hand_grab_sphere_UR_3D_controller.h"
-#include "toml_parser.h"
+#include "../AERA_controller_base/toml_parser.h"
 
 #define DEBUG 1
 #define Z_0 1
@@ -83,41 +83,10 @@ UR3eController::~UR3eController() {
 
 int UR3eController::start() {
 
-  toml_parser::TOMLParser parser;
-  parser.parse("settings.toml");
+  std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > objects_map;
 
-  std::vector<tcp_io_device::MetaData> objects;
-  std::vector<tcp_io_device::MetaData> commands;
+  objects_map = setup("settings.toml");
 
-
-  std::vector<std::string> entity_names = parser.entityNames();
-  std::vector<std::string> property_names = parser.propertyNames();
-  std::vector<std::string> command_names = parser.commandNames();
-
-  std::vector<std::string> object_names;
-  object_names.resize(entity_names.size() + property_names.size() + command_names.size());
-  // Add entities to the vector.
-  object_names.insert(object_names.end(), entity_names.begin(), entity_names.end());
-  // Add properties to the vector
-  object_names.insert(object_names.end(), property_names.begin(), property_names.end());
-  // Add commands to the vector
-  object_names.insert(object_names.end(), command_names.begin(), command_names.end());
-
-  // Generate communication ids by filling the string_id_mapping_
-  fillIdStringMaps(object_names);
-
-  std::map<std::string, toml_parser::entity> entity_map = parser.entities();
-  for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
-    auto e = e_it->second;
-    for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
-      objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
-    }
-    for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
-      commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
-    }
-  }
-
-  sendSetupMessage(objects, commands);
   waitForStartMsg();
   init();
   // Step once to initialize joint sensors.
@@ -135,32 +104,35 @@ int UR3eController::start() {
   }
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-  for (auto o = objects.begin(); o != objects.end(); ++o) {
-    std::string entity = id_string_mapping_[o->getEntityID()];
-    std::string prop = id_string_mapping_[o->getID()];
-    if (entity == "h") {
-      if (prop == "position") {
+
+  for (auto o = objects_map.begin(); o != objects_map.end(); ++o) {
+    std::string entity = o->first;
+    for (auto p = o->second.begin(); p != o->second.end(); ++p) {
+      std::string prop = p->first;
+      if (entity == "h") {
+        if (prop == "position") {
 #if Z_0
-        data_to_send.push_back(createMsgData<double>(*o, { hand_xyz_pos_[0], hand_xyz_pos_[1], 0. }));
+          data_to_send.push_back(createMsgData<double>(p->second, { hand_xyz_pos_[0], hand_xyz_pos_[1], 0. }));
 #else
-        data_to_send.push_back(createMsgData<double>(*o, hand_xyz_pos_));
+          data_to_send.push_back(createMsgData<double>(p->second, hand_xyz_pos_));
 #endif
+        }
+        else if (prop == "rotation") {
+          data_to_send.push_back(createMsgData<double>(p->second, std::vector<double>({ 0.5, -0.5, 0.5, -0.5 })));
+        }
+        else if (prop == "holding") {
+          data_to_send.push_back(createMsgData<communication_id_t>(p->second, { -1 }));
+        }
       }
-      else if (prop == "rotation") {
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ 0.5, -0.5, 0.5, -0.5 })));
-      }
-      else if (prop == "holding") {
-        data_to_send.push_back(createMsgData<communication_id_t>(*o, { -1 }));
-      }
-    }
-    else if (entity.substr(0, 2) == "b_") {
-      if (prop == "position") {
-        std::vector<double> box_pos = box_xyz_positions[std::stoi(entity.substr(2, 3))];
+      else if (entity.substr(0, 2) == "b_") {
+        if (prop == "position") {
+          std::vector<double> box_pos = box_xyz_positions[std::stoi(entity.substr(2, 3))];
 #if Z_0
-        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
+          data_to_send.push_back(createMsgData<double>(p->second, { box_pos[0], box_pos[1], 0. }));
 #else
-        data_to_send.push_back(createMsgData<double>(*o, box_pos));
+          data_to_send.push_back(createMsgData<double>(p->second, box_pos));
 #endif
+        }
       }
     }
   }

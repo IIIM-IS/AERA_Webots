@@ -8,6 +8,11 @@
 #include "../../submodules/AERA_Protobuf/utils.h"
 #include "../../submodules/AERA_Protobuf/tcp_data_message.pb.h"
 #include <webots/Supervisor.hpp>
+#include <webots/Motor.hpp>
+#include <webots/PositionSensor.hpp>
+#include "toml_parser.h"
+
+using communication_id_t = int64_t;
 
 class AERAController
 {
@@ -17,6 +22,8 @@ public:
   ~AERAController();
 
   virtual int start() = 0;
+
+  std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > setup(std::string settings_file_name);
 
   int startConnection();
 
@@ -60,9 +67,7 @@ protected:
   }
 
   template<typename T>
-
   tcp_io_device::MsgData createMsgData(tcp_io_device::MetaData meta_data, std::vector<T> data);
-  tcp_io_device::MsgData createMsgData(tcp_io_device::MetaData meta_data, std::string data);
 
   void sendDataMessage(std::vector<tcp_io_device::MsgData> msg_data);
 

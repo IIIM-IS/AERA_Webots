@@ -1,5 +1,5 @@
 #include "hand_grab_sphere_NED_1D_controller.h"
-#include "toml_parser.h"
+#include "../AERA_controller_base/toml_parser.h"
 
 #define DEBUG 1
 
@@ -45,40 +45,10 @@ HandGrabSphereController::~HandGrabSphereController() {
 
 int HandGrabSphereController::start() {
 
-  toml_parser::TOMLParser parser;
-  parser.parse("settings.toml");
+  std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > objects_map;
 
-  std::vector<tcp_io_device::MetaData> objects;
-  std::vector<tcp_io_device::MetaData> commands;
+  objects_map = setup("settings.toml");
 
-
-  std::vector<std::string> entity_names = parser.entityNames();
-  std::vector<std::string> property_names = parser.propertyNames();
-  std::vector<std::string> command_names = parser.commandNames();
-
-  std::vector<std::string> object_names;
-  object_names.resize(entity_names.size() + property_names.size() + command_names.size());
-  // Add entities to the vector.
-  object_names.insert(object_names.end(), entity_names.begin(), entity_names.end());
-  // Add properties to the vector
-  object_names.insert(object_names.end(), property_names.begin(), property_names.end());
-  // Add commands to the vector
-  object_names.insert(object_names.end(), command_names.begin(), command_names.end());
-
-  // Generate communication ids by filling the string_id_mapping_
-  fillIdStringMaps(object_names);
-
-  std::map<std::string, toml_parser::entity> entity_map = parser.entities();
-  for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
-    auto e = e_it->second;
-    for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
-      objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
-    }
-    for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
-      commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
-    }
-  }
-  sendSetupMessage(objects, commands);
   waitForStartMsg();
 
   init();
@@ -95,10 +65,10 @@ int HandGrabSphereController::start() {
   std::cout << "Sphere Position: " << s_position << std::endl;
 
   std::vector<tcp_io_device::MsgData> data_to_send;
-  data_to_send.push_back(createMsgData<double>(objects[0], { c_position }));
-  data_to_send.push_back(createMsgData<double>(objects[1], { h_position }));
-  data_to_send.push_back(createMsgData<communication_id_t>(objects[2], { -1 }));
-  data_to_send.push_back(createMsgData<double>(objects[3], { s_position }));
+  data_to_send.push_back(createMsgData<double>(objects_map["h"].at("position"), { h_position }));
+  data_to_send.push_back(createMsgData<communication_id_t>(objects_map["h"].at("holding"), { -1 }));
+  data_to_send.push_back(createMsgData<double>(objects_map["c"].at("position"), { c_position }));
+  data_to_send.push_back(createMsgData<double>(objects_map["s"].at("position"), { s_position }));
   sendDataMessage(data_to_send);
   state_ = IDLE;
   run();
