@@ -16,6 +16,47 @@ AERAController::~AERAController()
   tcp_connection_->stop();
 }
 
+std::map<std::string, std::map<std::string, tcp_io_device::MetaData>> AERAController::setup(std::string settings_file_name)
+{
+  toml_parser::TOMLParser parser;
+  parser.parse(settings_file_name);
+
+  std::vector<tcp_io_device::MetaData> objects;
+  std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > objects_map;
+  std::vector<tcp_io_device::MetaData> commands;
+
+
+  std::vector<std::string> entity_names = parser.entityNames();
+  std::vector<std::string> property_names = parser.propertyNames();
+  std::vector<std::string> command_names = parser.commandNames();
+
+  std::vector<std::string> object_names;
+  object_names.resize(entity_names.size() + property_names.size() + command_names.size());
+  // Add entities to the vector.
+  object_names.insert(object_names.end(), entity_names.begin(), entity_names.end());
+  // Add properties to the vector
+  object_names.insert(object_names.end(), property_names.begin(), property_names.end());
+  // Add commands to the vector
+  object_names.insert(object_names.end(), command_names.begin(), command_names.end());
+
+  // Generate communication ids by filling the string_id_mapping_
+  fillIdStringMaps(object_names);
+
+  std::map<std::string, toml_parser::entity> entity_map = parser.entities();
+  for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
+    auto e = e_it->second;
+    for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
+      objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
+      objects_map[e_it->first].insert(std::make_pair(p_it->name, objects.back()));
+    }
+    for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
+      commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
+    }
+  }
+  sendSetupMessage(objects, commands);
+  return objects_map;
+}
+
 int AERAController::startConnection()
 {
   std::cout << "Establishing TCP connection" << std::endl;

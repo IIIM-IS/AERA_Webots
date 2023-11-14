@@ -10,6 +10,7 @@
 #include <webots/Supervisor.hpp>
 #include <webots/Motor.hpp>
 #include <webots/PositionSensor.hpp>
+#include "toml_parser.h"
 
 using communication_id_t = int64_t;
 
@@ -21,6 +22,8 @@ public:
   ~AERAController();
 
   virtual int start() = 0;
+
+  std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > setup(std::string settings_file_name);
 
   int startConnection();
 
