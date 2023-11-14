@@ -156,9 +156,9 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.cc" />
-    <ClCompile Include="aera_controller.cpp" />
+    <ClCompile Include="..\AERA_controller_base\aera_controller.cpp" />
+    <ClCompile Include="..\AERA_controller_base\toml_parser.cpp" />
     <ClCompile Include="math_lib.cpp" />
-    <ClCompile Include="toml_parser.cpp" />
     <ClCompile Include="universal_robots_kinematics.cpp" />
     <ClCompile Include="hand_grab_sphere_UR_3D_controller.cpp" />
     <ClCompile Include="hand_grab_sphere_UR_3D_controller_main.cpp" />
@@ -167,11 +167,11 @@
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_data_message.pb.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\utils.h" />
-    <ClInclude Include="aera_controller.h" />
+    <ClInclude Include="..\AERA_controller_base\aera_controller.h" />
+    <ClInclude Include="..\AERA_controller_base\toml.h" />
+    <ClInclude Include="..\AERA_controller_base\toml_parser.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
-    <ClInclude Include="toml.h" />
-    <ClInclude Include="toml_parser.h" />
     <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="hand_grab_sphere_UR_3D_controller.h" />
   </ItemGroup>
