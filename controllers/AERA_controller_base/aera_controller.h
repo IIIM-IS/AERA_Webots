@@ -23,6 +23,8 @@ public:
 
   virtual int start() = 0;
 
+  virtual void init() = 0;
+
   std::map<std::string, std::map<std::string, tcp_io_device::MetaData> > setup(std::string settings_file_name);
 
   int startConnection();
@@ -44,6 +46,8 @@ protected:
   std::shared_ptr<tcp_io_device::SafeQueue> send_queue_;
   std::shared_ptr<tcp_io_device::TCPConnection> tcp_connection_;
 
+  tcp_io_device::StartMessage_ReconnectionType reconnection_type_;
+
   bool aera_started_ = false;
   bool diagnostic_mode_ = false;
 
@@ -56,6 +60,8 @@ protected:
   void handleStartMsg(std::unique_ptr<tcp_io_device::TCPMessage> msg);
 
   virtual void run() = 0;
+
+  virtual void handleReconnect();
 
   static std::vector<tcp_io_device::MsgData> dataMsgToMsgData(std::unique_ptr<tcp_io_device::TCPMessage> msg) {
     std::vector<tcp_io_device::MsgData> out_vec;

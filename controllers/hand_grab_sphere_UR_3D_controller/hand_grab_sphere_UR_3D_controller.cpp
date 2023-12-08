@@ -49,17 +49,6 @@ UR3eController::UR3eController() : AERAController() {
 
   tip_camera_ = new TipCamera(robot_->getCamera("tip_camera"));
 
-  for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-    arm_motors_[i]->setVelocity(1.0);
-  }
-
-  for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-    arm_sensors_[i]->enable(robot_time_step_);
-  }
-  for (size_t i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
-    hand_sensors_[i]->enable(robot_time_step_);
-  }
-
   gps_sensor_->enable(robot_time_step_);
 
   inertial_unit_->enable(robot_time_step_);
@@ -146,6 +135,18 @@ int UR3eController::start() {
 void UR3eController::init() {
   robot_->step(robot_time_step_);
   running_time_steps_ += robot_time_step_;
+
+  for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
+    arm_motors_[i]->setVelocity(1.0);
+  }
+
+  for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
+    arm_sensors_[i]->enable(robot_time_step_);
+  }
+  for (size_t i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
+    hand_sensors_[i]->enable(robot_time_step_);
+  }
+
   for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i)
   {
     arm_motors_[i]->setPosition(0.0 + motor_offsets_[i]);
@@ -212,15 +213,21 @@ void UR3eController::run() {
       pending_msg = std::move(msg);
     }
     if (pending_msg && (!diagnostic_mode_ || aera_us == receive_deadline)) {
-      if (pending_msg->messagetype() == tcp_io_device::TCPMessage_Type_DATA) {
+      switch (pending_msg->messagetype())
+      {
+      case tcp_io_device::TCPMessage_Type_DATA:
         handleDataMsg(dataMsgToMsgData(std::move(pending_msg)));
         std::cout << "HandleDataMsg called" << std::endl;
         robot_->step(1);
-      }
-      else {
+        break;
+      case tcp_io_device::TCPMessage_Type_RECONNECT:
+        std::cout << "Reconnect occured, resetting environment and sending new setup message" << std::endl;
+        handleReconnect();
+      default:
         std::cout << "Received message with unexpected type "
           << tcp_io_device::TCPConnection::type_to_name_map_[pending_msg->messagetype()]
           << ". Ignoring the message..." << std::endl;
+        break;
       }
       pending_msg = NULL;
     }
