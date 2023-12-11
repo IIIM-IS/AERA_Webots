@@ -9,6 +9,8 @@ AERAController::AERAController()
   receive_queue_ = std::make_shared<tcp_io_device::SafeQueue>(100);
   send_queue_ = std::make_shared<tcp_io_device::SafeQueue>(1);
   tcp_connection_ = std::make_shared<tcp_io_device::TCPConnection>(receive_queue_, send_queue_, 8);
+
+  reconnection_type_ = tcp_io_device::StartMessage_ReconnectionType_RE_INIT;
 }
 
 AERAController::~AERAController()
@@ -60,7 +62,8 @@ std::map<std::string, std::map<std::string, tcp_io_device::MetaData>> AERAContro
 int AERAController::startConnection()
 {
   std::cout << "Establishing TCP connection" << std::endl;
-  int err = tcp_connection_->establishConnection("127.0.0.1", "8080");
+  int err = tcp_connection_->listenAndAwaitConnection("8080");
+  // int err = tcp_connection_->establishConnection("127.0.0.1", "8080");
   if (err != 0) {
     std::cout << "ERROR: Could not establish a connection. Shutting down..." << std::endl;
     return -1;
@@ -149,6 +152,22 @@ void AERAController::waitForStartMsg(int timeout) {
 void AERAController::handleStartMsg(std::unique_ptr<tcp_io_device::TCPMessage> msg) {
   aera_started_ = true;
   diagnostic_mode_ = msg->startmessage().diagnosticmode();
+}
+
+void AERAController::handleReconnect() {
+  switch (reconnection_type_)
+  {
+  case tcp_io_device::StartMessage_ReconnectionType_RE_INIT:
+    robot_->simulationReset();
+    init();
+    sendSetupMessage(objects_meta_data_, commands_meta_data_);
+    break;
+  case tcp_io_device::StartMessage_ReconnectionType_RE_SETUP:
+    sendSetupMessage(objects_meta_data_, commands_meta_data_);
+    break;
+  default:
+    break;
+  }
 }
 
 template<typename T>
