@@ -112,11 +112,11 @@ void HandGrabSphereController::initAfterFailedRelease() {
 
 void HandGrabSphereController::run() {
   // AERA sends the first command at 100ms.
-  int aera_us = 100'000 / robot_time_step_;
+  int aera_us = 100'000;
 #ifdef DEBUG
   diagnostic_mode_ = true;
 #endif // DEBUG
-  int receive_deadline = aera_us + 65000 / robot_time_step_;
+  int receive_deadline = aera_us + 65000;
   std::unique_ptr<tcp_io_device::TCPMessage> pending_msg;
   while (robot_->step(robot_time_step_) != -1) {
     if (!aera_started_) {
@@ -150,7 +150,7 @@ void HandGrabSphereController::run() {
     double h_position = getAngularPosition(joint_1_sensor_->getValue());
 
     // Don't send the state on the first pass, but wait to arrive at the initial position.
-    if (aera_us > 100'000 / robot_time_step_ && (aera_us % (int)(100'000 / robot_time_step_)) == 0) {
+    if (aera_us > 100'000 && aera_us % 100'000 == 0) {
       const double* c_translation = cube_->getField("translation")->getSFVec3f();
       const double* s_translation = sphere_->getField("translation")->getSFVec3f();
       double c_position = getPosition(c_translation);
@@ -196,11 +196,11 @@ void HandGrabSphereController::run() {
       }
       sendDataMessage(msg_data);
 
-      receive_deadline = aera_us + 65000 / robot_time_step_;
+      receive_deadline = aera_us + 65'000;
     }
     executeCommand();
-    int next_aera_us = aera_us + robot_time_step_ * 100 / robot_time_step_;
-    if (diagnostic_mode_ && state_ != IDLE && (next_aera_us % (int)(100'000 / robot_time_step_) == 0)) {
+    int next_aera_us = aera_us + robot_time_step_ * 100;
+    if (diagnostic_mode_ && state_ != IDLE && next_aera_us % 100'000 == 0) {
       // In the next interation, we would send the state, but the robot is still executing a command.
       // In diagnistic mode, don't advance aera_us but wait for IDLE until we send the state.
     }
