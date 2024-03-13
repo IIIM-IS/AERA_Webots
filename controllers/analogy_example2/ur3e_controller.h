@@ -59,14 +59,14 @@ protected:
 
   int max_exec_time_steps_;
 
-  const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"grab_type1", 1'500}, {"grab_type2", 1'500}, {"release", 1'500}, {"default", 10'000} };
+  const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"rotate", 1'000}, {"grab_type1", 1'500}, {"grab_type2", 1'500}, {"release", 1'500}, {"default", 10'000} };
 
   void handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) override;
 
   const double motor_offsets_[NUMBER_OF_ARM_MOTORS] = { 0.0, -M_PI / 2, 0.0, -M_PI / 2, 0.0, 0.0 };
 
-  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.0, 1.0, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05}, {-0.4, -1.0, 0.05}, {-0.4, 1.0, 0.05} };
-  const double box_rotations_[NUMBER_OF_BOXES][4] = { {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0}, {0.0, 0.0, 1.0, 0} };
+  const double box_positions_[NUMBER_OF_BOXES][3] = { {0.0, 1.0, 0.05}, {0.2, 0.4, 0.05}, {-0.5, 0.3, 0.05}, {-0.5, 0.3, 0.05}, {-0.5, 0.3, 0.05}};
+  const double box_rotations_[NUMBER_OF_BOXES][4] = { {0.923785, 0.0, 0.0, 0.382911}, {1.0, 0.0, 0.0, 0}, {1.0, 0.0, 0.0, 0}, {1.0, 0.0, 0.0, 0}, {1.0, 0.0, 0.0, 0}};
 
 private:
 
@@ -102,9 +102,12 @@ private:
 
   std::vector<double> hand_xyz_pos_;
   std::vector<double> hand_quaternion_;
+  double hand_orientation_y;
   std::vector<double> target_h_position_;
   std::vector<double> target_h_position_2_;
-  std::vector<double> target_h_orientation_;
+  std::vector<double> target_h_position_orientation_;
+  double target_h_orientation_ = 0.0;
+  double move_to_target_h_orientation_;
   std::vector<double> target_joint_angles_;
   std::vector<double> target_joint_angles_2_;
   std::vector<double> hand_default_values_;
@@ -116,13 +119,14 @@ private:
   Eigen::Quaterniond target_hand_rotation_;
 
   const double position_accuracy_error_ = 0.01;
-  const double orientation_accuracy_error_ = 0.01;
   const double gripper_accuracy_error_ = 0.05;
 
   void executeCommand();
 
   std::vector<double> getJointAnglesFromXY(std::vector<double> xy_pos, int z_level);
-  std::vector<double> getJointAnglesFromXYOrientation(std::vector<double> xy_pos, std::vector<double> wz_quater, int z_level);
+  std::vector<double> getJointAnglesFromXYOrientation(std::vector<double> xy_pos, double orientation, int z_level);
+  universalRobots::pose getPositionOrientationFromJointAngles(std::vector<double> target_joint_angles_, double move_to_target_h_orientation_);
+
 
   void setJointAngles(std::vector<double> joint_angles);
 

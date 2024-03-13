@@ -1,32 +1,31 @@
-title = "Analogy Example"
+title = "Analogy Example 2"
 
 
 [[entities]]
 name = "h"
-properties = [ "position", "orientation", "holding" ]
-commands = [ "move", "rotate", "grab_type1", "grab_type2", "release" ]
+properties = [ "position", "rotation", "orientation", "holding" ]
+commands = [ "move", "rotate", "rotate_y", "grab_type1", "grab_type2", "release" ]
 
 [[entities]]
 name = "cube_1"
-properties = [ "position" , "orientation"]
+properties = [ "position" , "rotation", "orientation"]
 
-[[entities]]
-name = "cube_2"
-properties = [ "position" , "orientation"]
 
 [[entities]]
 name = "sphere_1"
-properties = [ "position" , "orientation"]
+properties = [ "position" , "rotation", "orientation"]
 
 [[entities]]
-name = "sphere_2"
-properties = [ "position" , "orientation"]
+name = "cube_2"
+properties = [ "position" , "rotation", "orientation"]
 
 [[entities]]
 name = "cyl_1"
-properties = [ "position" , "orientation"]
+properties = [ "position" , "rotation", "orientation"]
 
-
+[[entities]]
+name = "cube_3"
+properties = [ "position" , "rotation", "orientation"]
 
 
 [[properties]]
@@ -42,10 +41,16 @@ dimensionality = [1]
 opcode_handle = "set"
 
 [[properties]]
-name = "orientation"
+name = "rotation"
 type = "double"
 dimensionality = [4]
 opcode_handle = "quat"
+
+[[properties]]
+name = "orientation"
+type = "double"
+dimensionality = [1]
+opcode_handle = ""
 
 
 
@@ -76,3 +81,9 @@ name = "rotate"
 type = "double"
 dimensionality = [4]
 opcode_handle = "quat"
+
+[[commands]]
+name = "rotate_y"
+type = "double"
+dimensionality = [1]
+opcode_handle = ""

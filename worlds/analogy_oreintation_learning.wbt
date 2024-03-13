@@ -1,0 +1,156 @@
+#VRML_SIM R2023a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/floors/protos/CircleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/appearances/protos/Parquetry.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/robots/universal_robots/protos/UR10e.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/devices/robotiq/protos/Robotiq3fGripper.proto"
+EXTERNPROTO "../protos/RecognizableSolidBox.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/balls/protos/Ball.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/obstacles/protos/OilBarrel.proto"
+
+WorldInfo {
+  basicTimeStep 10
+}
+Viewpoint {
+  orientation 0.4112206057737907 0.4368135534213937 -0.8000572060386757 1.7327718292221794
+  position -0.004694925738409184 4.13239929938677 4.8041849140731285
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+DEF Circle_Arena CircleArena {
+  radius 1.42
+  floorAppearance Parquetry {
+    type "light strip"
+  }
+}
+CircleArena {
+  translation 0 0 -0.01
+  name "inner area"
+  radius 0.2
+  floorAppearance Parquetry {
+    type "light strip"
+  }
+  wallHeight 0.05
+}
+DEF UR10e UR10e {
+  controller "analogy_example2"
+  supervisor TRUE
+  selfCollision FALSE
+  toolSlot [
+    DEF inertial_unit InertialUnit {
+      translation 0 0.21 0
+    }
+    Camera {
+      rotation 0 0 1 1.5708
+      name "tip_camera"
+      width 128
+      height 128
+      recognition Recognition {
+        maxObjects 1
+        occlusion FALSE
+      }
+    }
+    DEF gps GPS {
+      translation 0 0.21 0
+      name "gps_tip"
+    }
+    DEF gripper Robotiq3fGripper {
+    }
+  ]
+}
+DEF small_cube RecognizableSolidBox {
+  translation -0.2 1 0.024
+  rotation 0 0 1 1.57
+  name "small_cube"
+  size 0.172 0.047 0.047
+  appearance PBRAppearance {
+    baseColor 0.6 0.6 0.6
+    roughness 0.5
+    metalness 0.8
+  }
+  physics Physics {
+    density -1
+    mass 1
+    centerOfMass [
+      0 0 0
+    ]
+    inertiaMatrix [
+      0.0016666666666666674 0.0016666666666666674 0.0016666666666666674
+      0 0 0
+    ]
+  }
+  recognitionColors [
+    0 1 0
+  ]
+}
+DEF small_cube2 RecognizableSolidBox {
+  translation 0.5 1 0.028
+  rotation 0 0 1 -0.13090030610042527
+  name "large_cube"
+  size 0.3 0.054 0.054
+  appearance PBRAppearance {
+    baseColor 0 1 1
+    roughness 0.5
+    metalness 0.9
+  }
+  physics Physics {
+    density -1
+    mass 0.1
+    centerOfMass [
+      0 0 0
+    ]
+    inertiaMatrix [
+      0.0016666666666666674 0.0016666666666666674 0.0016666666666666674
+      0 0 0
+    ]
+  }
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF small_cube3 RecognizableSolidBox {
+  translation 0.7 0.7 0.028
+  rotation 0 0 1 1.9626996938995749
+  name "small_cube3"
+  size 0.3 0.054 0.054
+  appearance PBRAppearance {
+    baseColor 0 0.9 1
+    roughness 0.5
+    metalness 0.9
+  }
+  physics Physics {
+    density -1
+    mass 0.1
+    centerOfMass [
+      0 0 0
+    ]
+    inertiaMatrix [
+      0.0016666666666666674 0.0016666666666666674 0.0016666666666666674
+      0 0 0
+    ]
+  }
+  recognitionColors [
+    1 0 0
+  ]
+}
+DEF small_cyl OilBarrel {
+  translation 0.4 0.7 0.054
+  rotation 0 0 1 0.57
+  name "large_cylinder"
+  height 0.09
+  radius 0.049
+  physics Physics {
+    mass 0.5
+  }
+}
+DEF small_sphere Ball {
+  translation -0.5 1 0.03
+  name "small_sphere"
+  color 0.3 0 0
+  radius 0.05
+  mass 0.3
+}

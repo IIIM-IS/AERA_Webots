@@ -39,11 +39,10 @@ UR3eController::UR3eController() : AERAController() {
   hand_sensors_[2] = robot_->getPositionSensor("finger_middle_joint_1_sensor");
 
   objects_[0] = robot_->getFromDef("small_cube");
-  objects_[1] = robot_->getFromDef("large_cube");
-  objects_[2] = robot_->getFromDef("large_sphere");
-  objects_[3] = robot_->getFromDef("small_sphere");
-  objects_[4] = robot_->getFromDef("large_cylinder");
-
+  objects_[1] = robot_->getFromDef("small_sphere");
+  objects_[2] = robot_->getFromDef("small_cube2");
+  objects_[3] = robot_->getFromDef("small_cyl");
+  objects_[4] = robot_->getFromDef("small_cube3");
 
   gps_sensor_ = robot_->getGPS("gps_tip");
 
@@ -140,16 +139,6 @@ int UR3eController::start() {
     obj_xyz_positions.push_back(box_xyz_pos);
   }
 
-  // get the orientations of hand and objects
-  const double* hand_ori_array = inertial_unit_->getQuaternion();
-  hand_quaternion_ = getRoundedOrientation(hand_ori_array); // WARNING: the function may need modifications
-
-  std::vector<std::vector<double>> obj_wxyz_orientations;
-  for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
-    const double* obj_ori_array = objects_[i]->getField("rotation")->getSFRotation();
-    std::vector<double> box_orientation = getRoundedOrientation(obj_ori_array);
-    obj_wxyz_orientations.push_back(box_orientation);
-  }
 
   std::vector<tcp_io_device::MsgData> data_to_send;
   for (auto o = objects.begin(); o != objects.end(); ++o) {
@@ -163,9 +152,10 @@ int UR3eController::start() {
         data_to_send.push_back(createMsgData<double>(*o, hand_xyz_pos_));
 #endif
       }
-      else if (prop == "orientation") {
-        // has no effect at all
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ hand_quaternion_[0], hand_quaternion_[1], hand_quaternion_[2], hand_quaternion_[3]})));
+      else if (prop == "orientation"){
+        const double* hand_rotation = inertial_unit_->getRollPitchYaw();
+        hand_orientation_y = hand_rotation[2];
+        data_to_send.push_back(createMsgData<double>(*o, { hand_orientation_y }));
       }
       else if (prop == "holding") {
         data_to_send.push_back(createMsgData<communication_id_t>(*o, { -1 }));
@@ -180,40 +170,8 @@ int UR3eController::start() {
         data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
       }
-      else if (prop == "orientation") {
-        std::vector<double> box_ori = obj_wxyz_orientations[0];
-        // send the orientation data
-#if Z_0        
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ box_ori[0], box_ori[1], box_ori[2], box_ori[3] })));
-        // CHECK THE CURRENT ORIENTATION OF THE FIRST CUBE
-        std::cout << "box_ori[1] " << box_ori[0] << ", qx: " << box_ori[1] << ", qy: " << box_ori[2] << ", qz: " << box_ori[3] << std::endl;
-#else
-        data_to_send.push_back(createMsgData<double>(*o, box_ori));
-#endif
-      }
     }
     else if (entity == "cube_2") {
-      if (prop == "position") {
-        std::vector<double> box_pos = obj_xyz_positions[1];
-#if Z_0
-        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
-#else
-        data_to_send.push_back(createMsgData<double>(*o, box_pos));
-#endif
-      }
-      else if (prop == "orientation") {
-        std::vector<double> box_ori = obj_wxyz_orientations[1];
-        // send the orientation data
-#if Z_0        
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ box_ori[0], box_ori[1], box_ori[2], box_ori[3] })));
-        // CHECK THE CURRENT ORIENTATION OF THE second CUBE
-        std::cout << "box_ori[2] " << box_ori[0] << ", qx: " << box_ori[1] << ", qy: " << box_ori[2] << ", qz: " << box_ori[3] << std::endl;
-#else
-        data_to_send.push_back(createMsgData<double>(*o, box_ori));
-#endif
-      }
-    }
-    else if (entity == "sphere_1") {
       if (prop == "position") {
         std::vector<double> box_pos = obj_xyz_positions[2];
 #if Z_0
@@ -222,17 +180,18 @@ int UR3eController::start() {
         data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
       }
-      else if (prop == "orientation") {
-        std::vector<double> box_ori = obj_wxyz_orientations[2];
-        // send the orientation data
-#if Z_0        
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ box_ori[0], box_ori[1],box_ori[2], box_ori[3] })));
+    }
+    else if (entity == "sphere_1") {
+      if (prop == "position") {
+        std::vector<double> box_pos = obj_xyz_positions[1];
+#if Z_0
+        data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
 #else
-        data_to_send.push_back(createMsgData<double>(*o, box_ori));
+        data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
       }
     }
-    else if (entity == "sphere_2") {
+    else if (entity == "cyl_1"){
       if (prop == "position") {
         std::vector<double> box_pos = obj_xyz_positions[3];
 #if Z_0
@@ -241,32 +200,14 @@ int UR3eController::start() {
         data_to_send.push_back(createMsgData<double>(*o, box_pos));
 #endif
       }
-      else if (prop == "orientation") {
-        std::vector<double> box_ori = obj_wxyz_orientations[3];
-        // send the orientation data
-#if Z_0        
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ box_ori[0], box_ori[1], box_ori[2], box_ori[3] })));
-#else
-        data_to_send.push_back(createMsgData<double>(*o, box_ori));
-#endif
-      }
     }
-    else if (entity == "cyl_1") {
+    else if (entity == "cube_3") {
       if (prop == "position") {
         std::vector<double> box_pos = obj_xyz_positions[4];
 #if Z_0
         data_to_send.push_back(createMsgData<double>(*o, { box_pos[0], box_pos[1], 0. }));
 #else
         data_to_send.push_back(createMsgData<double>(*o, box_pos));
-#endif
-      }
-      else if (prop == "orientation") {
-        std::vector<double> box_ori = obj_wxyz_orientations[4];
-        // send the orientation data
-#if Z_0        
-        data_to_send.push_back(createMsgData<double>(*o, std::vector<double>({ box_ori[0], box_ori[1], box_ori[2], box_ori[3] })));
-#else
-        data_to_send.push_back(createMsgData<double>(*o, box_ori));
 #endif
       }
     }
@@ -298,59 +239,31 @@ void UR3eController::init() {
   }
   double random_positions[NUMBER_OF_BOXES][3];
 
-  // get_random_box_positions is not needed, as the positions and orientations are not random.
   //get_random_box_positions(random_positions);
 #if 1 // debug
-  random_positions[0][0] = 0;
+  random_positions[0][0] = -0.2;
   random_positions[0][1] = 1;
   random_positions[1][0] = -0.5;
   random_positions[1][1] = 1;
-  random_positions[2][0] = -.8;
-  random_positions[2][1] = -0.1;
-  random_positions[3][0] = -1.1;
-  random_positions[3][1] = -0.4;
-  random_positions[4][0] = -1;
-  random_positions[4][1] = -0.71;
+  random_positions[2][0] = .6;
+  random_positions[2][1] = 1;
+  random_positions[3][0] = .4;
+  random_positions[3][1] = 0.7;
+  random_positions[4][0] = .7;
+  random_positions[4][1] = 0.7;
+
 #endif
 
-  double orientations[NUMBER_OF_BOXES][4];
-  // Note that [0, 0, 0, 0] gets error, as it is in quaternions
-  // Since the axis of rotation os z axis, we can assume qx =0, qy=0.
-  orientations[0][0] = 1;
-  orientations[0][1] = 0;
-  orientations[0][2] = 0;
-  orientations[0][3] = 0;
 
-  orientations[1][0] = 1;
-  orientations[1][1] = 0;
-  orientations[1][2] = 0;
-  orientations[1][3] = 0;
 
-  orientations[2][0] = 1;
-  orientations[2][1] = 0;
-  orientations[2][2] = 0;
-  orientations[2][3] = 0;
-
-  orientations[3][0] = 1;
-  orientations[3][1] = 0;
-  orientations[3][2] = 0;
-  orientations[3][3] = 0;
-
-  orientations[4][0] = 1;
-  orientations[4][1] = 0;
-  orientations[4][2] = 0;
-  orientations[4][3] = 0;
 
   for (size_t i = 0; i < NUMBER_OF_BOXES; i++)
   {
-    objects_[i]->getField("rotation")->setSFRotation(orientations[i]);
+    // setSFRotation may not work properly.
+    //objects_[i]->getField("rotation")->setSFRotation(random_rotations[i]);
     objects_[i]->getField("translation")->setSFVec3f(random_positions[i]);
   }
 
-#if 0
-  boxes_[0]->getField("rotation")->setSFRotation(orientations[0]);
-  boxes_[0]->getField("translation")->setSFVec3f(box_positions_[0]);
-#endif
 }
 
 void UR3eController::run() {
@@ -398,41 +311,88 @@ void UR3eController::run() {
       const double* hand_pos_array = gps_sensor_->getValues();
       hand_xyz_pos_ = getRoundedXYZPosition(hand_pos_array);
 
-      // get the orientations of hand and objects
       const double* hand_ori_array = inertial_unit_->getQuaternion();
       hand_quaternion_ = getRoundedOrientation(hand_ori_array); 
 
-      // This piece of code had no use.
-      //const double* hand_rotation = inertial_unit_->getQuaternion();
-      //double _1 = hand_rotation[3] < 0 ? -1 : 1;
-      //Eigen::Quaterniond new_rotation = Eigen::Quaterniond(
-      //  _1 * round(hand_rotation[3] * 100.) / 100.,
-      //  _1 * round(hand_rotation[0] * 100.) / 100.,
-      //  _1 * round(hand_rotation[1] * 100.) / 100.,
-      //  _1 * round(hand_rotation[2] * 100.) / 100.);
-      //new_rotation.normalize();
 
-      //std::cout << "new_rotation: " << new_rotation << std::endl;
-      //std::cout << "old_rotation: " << hand_rotation_ << std::endl;
+      const double* hand_rotation = inertial_unit_->getRollPitchYaw();
+      hand_orientation_y = hand_rotation[2];
+      std::cout << "hand's orientation: " << hand_orientation_y << std::endl;
 
-      //if (!(new_rotation.coeffs() == (hand_rotation_.coeffs() * -1.) || new_rotation == hand_rotation_)) {
-      //  hand_rotation_ = new_rotation;
-      //}
+      const double* cube_1_rotation = objects_[0]->getOrientation();
+      double __1 = cube_1_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond cube_1_new_rotation = Eigen::Quaterniond(
+        __1 * round(cube_1_rotation[3] * 100.) / 100.,
+        __1 * round(cube_1_rotation[0] * 100.) / 100.,
+        __1 * round(cube_1_rotation[1] * 100.) / 100.,
+        __1 * round(cube_1_rotation[2] * 100.) / 100.);
+      cube_1_new_rotation.normalize();
+      auto cube_1_orientation = cube_1_new_rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+      //double cube_1_orientation_x = cube_1_orientation.x();
+      //std::cout << "cube_1's orientation.x(): " << cube_1_orientation_x << std::endl;
+      double cube_1_orientation_y = cube_1_orientation.y();
+      std::cout << "cube_1's orientation.y(): " << cube_1_orientation_y + 1.57009 << std::endl;
+      //double cube_1_orientation_z = cube_1_orientation.z();
+      //std::cout << "cube_1's orientation.z(): " << cube_1_orientation_z << std::endl;
+      
 
-      //std::cout << "old_rotation: " << hand_rotation_ << std::endl;
+      const double* sphere_1_rotation = objects_[1]->getOrientation();
+      double _1_ = sphere_1_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond sphere_1_new_rotation = Eigen::Quaterniond(
+        _1_ * round(sphere_1_rotation[3] * 100.) / 100.,
+        _1_ * round(sphere_1_rotation[0] * 100.) / 100.,
+        _1_ * round(sphere_1_rotation[1] * 100.) / 100.,
+        _1_ * round(sphere_1_rotation[2] * 100.) / 100.);
+      sphere_1_new_rotation.normalize();
+      auto sphere_1_orientation = sphere_1_new_rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+      double sphere_1_orientation_y = sphere_1_orientation.y();
+      std::cout << "sphere_1's orientation.y(): " << sphere_1_orientation_y + 1.57009 << std::endl;
+      
 
+      const double* cube_2_rotation = objects_[2]->getOrientation();
+      double __1_ = cube_2_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond cube_2_new_rotation = Eigen::Quaterniond(
+        __1_ * round(cube_2_rotation[3] * 100.) / 100.,
+        __1_ * round(cube_2_rotation[0] * 100.) / 100.,
+        __1_ * round(cube_2_rotation[1] * 100.) / 100.,
+        __1_ * round(cube_2_rotation[2] * 100.) / 100.);
+      cube_2_new_rotation.normalize();
+      auto cube_2_orientation = cube_2_new_rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+      double cube_2_orientation_y = cube_2_orientation.y();
+      if (cube_2_orientation_y > 0) cube_2_orientation_y *= -1;
+      std::cout << "cube_2's orientation.y(): " << cube_2_orientation_y + 1.57009 << std::endl;
+      
+
+      const double* cyl_1_rotation = objects_[3]->getOrientation();
+      double __1__= cyl_1_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond cyl_1_new_rotation = Eigen::Quaterniond(
+        __1__* round(cyl_1_rotation[3] * 100.) / 100.,
+        __1__* round(cyl_1_rotation[0] * 100.) / 100.,
+        __1__* round(cyl_1_rotation[1] * 100.) / 100.,
+        __1__* round(cyl_1_rotation[2] * 100.) / 100.);
+      cyl_1_new_rotation.normalize();
+      auto cyl_1_orientation = cyl_1_new_rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+      double cyl_1_orientation_y = cyl_1_orientation.y();
+      std::cout << "cyl_1's orientation.y(): " << cyl_1_orientation_y + 1.57009 << std::endl;
+
+      const double* cube_3_rotation = objects_[4]->getOrientation();
+      double __1___ = cube_3_rotation[3] < 0 ? -1 : 1;
+      Eigen::Quaterniond cube_3_new_rotation = Eigen::Quaterniond(
+        __1___ * round(cube_3_rotation[3] * 100.) / 100.,
+        __1___ * round(cube_3_rotation[0] * 100.) / 100.,
+        __1___ * round(cube_3_rotation[1] * 100.) / 100.,
+        __1___ * round(cube_3_rotation[2] * 100.) / 100.);
+      cube_3_new_rotation.normalize();
+      auto cube_3_orientation = cube_3_new_rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+      double cube_3_orientation_y = cube_3_orientation.y();
+      std::cout << "cube_3's orientation.y(): " << cube_3_orientation_y + 1.57009 << std::endl;
+
+      
       std::vector<std::vector<double>> box_xyz_positions;
       for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
         const double* box_pos_array = objects_[i]->getField("translation")->getSFVec3f();
         std::vector<double> box_xyz_pos = getRoundedXYZPosition(box_pos_array);
         box_xyz_positions.push_back(box_xyz_pos);
-      }
-
-      std::vector<std::vector<double>> box_wxyz_orientations;
-      for (int i = 0; i < NUMBER_OF_BOXES; ++i) {
-        const double* box_ori_array = objects_[i]->getField("rotation")->getSFRotation();
-        std::vector<double> box_wxyz_ori = getRoundedXYZPosition(box_ori_array);
-        box_wxyz_orientations.push_back(box_wxyz_ori);
       }
 
       communication_id_t holding_id = -1;
@@ -447,14 +407,14 @@ void UR3eController::run() {
         {
           if (i == 0)
             holding_id = string_id_mapping_["cube_1"];
-          else if (i == 1)
-            holding_id = string_id_mapping_["cube_2"];
           else if (i == 2)
+            holding_id = string_id_mapping_["cube_2"];
+          else if (i == 1)
             holding_id = string_id_mapping_["sphere_1"];
           else if (i == 3)
-            holding_id = string_id_mapping_["sphere_2"];
-          else if (i == 4)
             holding_id = string_id_mapping_["cyl_1"];
+          else if (i == 4)
+            holding_id = string_id_mapping_["cube_3"];
           break;
         }
       }
@@ -495,17 +455,6 @@ void UR3eController::run() {
           }
           else if (entity == "cube_2") {
 #if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            double save_z = box_xyz_positions[1][2];
-            box_xyz_positions[1][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[1]));
-#if Z_0
-            box_xyz_positions[1][2] = save_z;
-#endif
-            continue;
-          }
-          else if (entity == "sphere_1") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = box_xyz_positions[2][2];
             box_xyz_positions[2][2] = 0;
 #endif
@@ -515,7 +464,18 @@ void UR3eController::run() {
 #endif
             continue;
           }
-          else if (entity == "sphere_2") {
+          else if (entity == "sphere_1") {
+#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
+            double save_z = box_xyz_positions[1][2];
+            box_xyz_positions[1][2] = 0;
+#endif
+            msg_data.push_back(createMsgData<double>(*it, box_xyz_positions[1]));
+#if Z_0
+            box_xyz_positions[1][2] = save_z;
+#endif
+            continue;
+          }
+          else if (entity == "cyl_1") {
 #if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = box_xyz_positions[3][2];
             box_xyz_positions[3][2] = 0;
@@ -526,7 +486,7 @@ void UR3eController::run() {
 #endif
             continue;
           }
-          else if (entity == "cyl_1") {
+          else if (entity == "cube_3") {
 #if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
             double save_z = box_xyz_positions[4][2];
             box_xyz_positions[4][2] = 0;
@@ -541,71 +501,22 @@ void UR3eController::run() {
         if (id_string_mapping_[it->getID()] == "orientation") {
           std::string entity = id_string_mapping_[it->getEntityID()];
           if (entity == "h") {
-#if Z_0 // Debug: 
-            //double save_z = hand_quaternion_[2];
-            //hand_quaternion_[2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, hand_quaternion_));
-#if Z_0
-            //hand_quaternion_[2] = save_z;
-#endif
-            //measurement_state_ = NONE;
-            continue;
+            msg_data.push_back(createMsgData<double>(*it, { (round(hand_orientation_y * 10.) / 10.) }));
           }
           else if (entity == "cube_1") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            //double save_z = box_xyz_positions[0][2];
-            //box_xyz_positions[0][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_wxyz_orientations[0]));
-#if Z_0
-            //box_xyz_positions[0][2] = save_z;
-#endif
-            continue;
+            msg_data.push_back(createMsgData<double>(*it, { (round((cube_1_orientation_y + 1.57009) * 10.) / 10.) < 0 ? -(round((cube_1_orientation_y + 1.57009) * 10.) / 10.) : (round((cube_1_orientation_y + 1.57009) * 10.) / 10.) }));
           }
           else if (entity == "cube_2") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            //double save_z = box_xyz_positions[1][2];
-            //box_xyz_positions[1][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_wxyz_orientations[1]));
-#if Z_0
-            //box_xyz_positions[1][2] = save_z;
-#endif
-            continue;
+            msg_data.push_back(createMsgData<double>(*it, { (round((cube_2_orientation_y + 1.57009) * 10.) / 10.) < 0 ? -(round((cube_2_orientation_y + 1.57009) * 10.) / 10.) : (round((cube_2_orientation_y + 1.57009) * 10.) / 10.) }));
           }
           else if (entity == "sphere_1") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            //double save_z = box_xyz_positions[2][2];
-            //box_xyz_positions[2][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_wxyz_orientations[2]));
-#if Z_0
-            //box_xyz_positions[2][2] = save_z;
-#endif
-            continue;
-          }
-          else if (entity == "sphere_2") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            //double save_z = box_xyz_positions[3][2];
-            //box_xyz_positions[3][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_wxyz_orientations[3]));
-#if Z_0
-            //box_xyz_positions[3][2] = save_z;
-#endif
-            continue;
+            msg_data.push_back(createMsgData<double>(*it, { (round((sphere_1_orientation_y + 1.57009) * 10.) / 10.) < 0 ? -(round((sphere_1_orientation_y + 1.57009) * 10.) / 10.) : (round((sphere_1_orientation_y + 1.57009) * 10.) / 10.) }));
           }
           else if (entity == "cyl_1") {
-#if Z_0 // Debug: Always report Z = 0 so that hand and box can be at the "same" vec3.
-            //double save_z = box_xyz_positions[4][2];
-            //box_xyz_positions[4][2] = 0;
-#endif
-            msg_data.push_back(createMsgData<double>(*it, box_wxyz_orientations[4]));
-#if Z_0
-            //box_xyz_positions[4][2] = save_z;
-#endif
-            continue;
+            msg_data.push_back(createMsgData<double>(*it, { (round((cyl_1_orientation_y + 1.57009) * 10.) / 10.) < 0 ? -(round((cyl_1_orientation_y + 1.57009) * 10.) / 10.) : (round((cyl_1_orientation_y + 1.57009) * 10.) / 10.) }));
+          }
+          else if (entity == "cube_3") {
+            msg_data.push_back(createMsgData<double>(*it, { (round((cube_3_orientation_y + 1.57009) * 10.) / 10.) < 0 ? -(round((cube_3_orientation_y + 1.57009) * 10.) / 10.) : (round((cube_3_orientation_y + 1.57009) * 10.) / 10.) }));
           }
         }
       }
@@ -638,26 +549,26 @@ void UR3eController::executeCommand() {
       state_ = IDLE;
       return;
     }
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
-    //target_joint_angles_2_ = setHandOrientation(target_h_position_, target_h_orientation_, 1);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_ARM;
         break;
       }
       state_ = IDLE;
     }
+    return;
   case UR3eController::ROTATE_ARM:
-    //if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
-    //  state_ = IDLE;
-    //  return;
-    //}
-    // Keep the hand's xy position but change the hands orientation
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
+    if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
+      state_ = IDLE;
+      return;
+    }
+    //d::cout << "################# target_h_orientation_##################: " << target_h_orientation_ << std::endl;
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > orientation_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = ROTATE_ARM;
         break;
       }
@@ -668,8 +579,6 @@ void UR3eController::executeCommand() {
     for (int i = 0; i < NUMBER_OF_HAND_MOTORS; ++i) {
       if (fabs(hand_open_values_[i] - hand_sensors_[i]->getValue()) > gripper_accuracy_error_) {
         setHandAngles(hand_open_values_);
-        // This is where the had will rotate
-        //setJointAngles(target_joint_angles_2_);
         state_ = OPEN_BEFORE_GRAB_2;
         break;
       }
@@ -682,10 +591,11 @@ void UR3eController::executeCommand() {
       state_ = MOVE_UP;
       return;
     }
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
+    //target_joint_angles_ = getJointAnglesFromXY(target_h_position_, 0);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_DOWN_CLOSE_1;
         break;
       }
@@ -694,13 +604,14 @@ void UR3eController::executeCommand() {
     return;
   case UR3eController::MOVE_DOWN_CLOSE_2:
     if ((running_time_steps_ - receive_cmd_time_) >= max_exec_time_steps_) {
-      state_ = MOVE_UP;
+      setHandAngles(hand_default_values_);
+      state_ = MOVE_UP;;
       return;
     }
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_DOWN_CLOSE_2;
         break;
       }
@@ -712,10 +623,10 @@ void UR3eController::executeCommand() {
       state_ = MOVE_UP;
       return;
     }
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 0);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_DOWN_OPEN;
         break;
       }
@@ -780,10 +691,10 @@ void UR3eController::executeCommand() {
     }
     return;
   case UR3eController::MOVE_UP:
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_UP;
         break;
       }
@@ -794,10 +705,10 @@ void UR3eController::executeCommand() {
     }
     return;
   case UR3eController::MOVE_UP_AFTER_RELEASE:
-    target_joint_angles_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
+    target_joint_angles_2_ = getJointAnglesFromXYOrientation(target_h_position_, target_h_orientation_, 1);
     for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
-      if (fabs(target_joint_angles_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
-        setJointAngles(target_joint_angles_);
+      if (fabs(target_joint_angles_2_[i] - arm_sensors_[i]->getValue()) > position_accuracy_error_) {
+        setJointAngles(target_joint_angles_2_);
         state_ = MOVE_UP_AFTER_RELEASE;
         break;
       }
@@ -863,28 +774,28 @@ void UR3eController::handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data)
       
       state_ = MOVE_ARM;
     }
-    else if (id_name == "rotate")
+    else if (id_name == "rotate_y")
     {
-      std::vector<double> rotate_by_command = it->getData<double>();
+      move_to_target_h_orientation_ = it->getData<double>()[0];
+      //double target_orientation;
+      // O1 = O0 + DeltaO
+      //target_orientation = hand_orientation_y + move_to_target_h_orientation_;
+      //  target_h_orientation_ = -1 * move_to_target_h_orientation_;
+      target_h_orientation_ += (-1 * move_to_target_h_orientation_);
+      std::cout << "$$$$$$$$$$$$$ hand_orientation_y $$$$$$$$$$ " << hand_orientation_y << "$$$$$$$$$move_to_target_h_orientation_$$$$$$$$$$" << move_to_target_h_orientation_ << std::endl;
+      //std::cout << "$$$$$$$$$$$$$ target_orientation $$$$$$$$$$ " << target_orientation << std::endl;
+      //target_joint_angles_[5] -= move_to_target_h_orientation_;
+      //std::cout << "MOVE TO TARGET ORIENTATION IN EULER COORNIATES Y AXIS: " << move_to_target_h_orientation_ << std::endl;
 
-      std::vector<double> target_orientation;
-      // P1 = P0 + DeltaP
-      for (int i = 0; i < rotate_by_command.size(); ++i) {
-        target_orientation.push_back(hand_quaternion_[i] + rotate_by_command[i]);
-      }
-
-      // CHECK THE CURRENT ORIENTATION OF THE FIRST CUBE: wired that it does not matche the sent data!
-      const double* obj_ori_array = objects_[1]->getField("rotation")->getSFRotation();
-      std::vector<double> box_orientation = getRoundedOrientation(obj_ori_array);
-      std::cout << "1st box current orientation qw: " << box_orientation[0] << ", qx: " << box_orientation[1] << ", qy: " << box_orientation[2] << ", qz: " << box_orientation[3] << std::endl;
-
-      /// CHECK THE CURRENT ORIENTATION OF HAND
-      const double* hand_orien = inertial_unit_->getQuaternion();
-      hand_quaternion_ = getRoundedOrientation(hand_orien); // WARNING: the function may need modifications
-      std::cout << "Arm current orientation qw: " << hand_quaternion_[0] << ", qx: " << hand_quaternion_[1] << ", qy: " << hand_quaternion_[2] << ", qz: " << hand_quaternion_[3] << std::endl;
-
-      target_h_orientation_ = target_orientation;
-      std::cout << "Rotating the arm to qw: " << target_h_orientation_[0] << ", qx: " << target_h_orientation_[1] << ", qy: " << target_h_orientation_[2]  << ", qz: " << target_h_orientation_[3] << std::endl;
+      //std::vector<double> target_position_h;
+      //// Get Position Orientation of hand from FORWARD KINEMATICS
+      //universalRobots::pose desiredPosOrientation = getPositionOrientationFromJointAngles(target_joint_angles_, move_to_target_h_orientation_);
+      //for (int i = 0; i < 3; ++i) {
+      //  target_position_h.push_back(desiredPosOrientation.m_pos[i]);
+      //}
+      ////target_h_position_ = target_position_h;
+      //target_orientation = desiredPosOrientation.m_eulerAngles[2];
+      //target_h_orientation_ = target_orientation;
 
       state_ = ROTATE_ARM;
     }
@@ -919,19 +830,13 @@ std::vector<double> UR3eController::getJointAnglesFromXY(std::vector<double> xy_
 }
 
 // This function sets the orinetation of the hand
-std::vector<double> UR3eController::getJointAnglesFromXYOrientation(std::vector<double> xy_pos, std::vector<double> wz_quater, int z_level) {
+std::vector<double> UR3eController::getJointAnglesFromXYOrientation(std::vector<double> xy_pos, double orientation, int z_level) {
 
   float joint_angles_array[8][6];
 
-  // These are conversion formulas from the hand's quaternion angles to Euler angles.
-  float phi = atan2(2 * ((wz_quater[0] * wz_quater[1]) + (wz_quater[0] * wz_quater[1])) , (1 - (2*(pow(wz_quater[1], 2) + pow(wz_quater[2], 2)) ) ));
-  float theta = asin(2 * ((wz_quater[1]* wz_quater[2]) - (wz_quater[2] * wz_quater[4])));
-  float sai = atan2(2 * ((wz_quater[0] * wz_quater[3]) + (wz_quater[1] * wz_quater[2])) , (1 - (2*(pow(wz_quater[2], 2) + pow(wz_quater[3], 2)) ) ));
-  
-  //double sai = wz_quater[3];
-  //std::cout << "SAI IS" << sai << std::endl;
 
-  ur_kinematics_->inverseKinematics(universalRobots::pose(xy_pos[0], xy_pos[1], (0.185 * z_level) + 0.015, M_PI, 0.0, sai), &joint_angles_array);
+
+  ur_kinematics_->inverseKinematics(universalRobots::pose(xy_pos[0], xy_pos[1], (0.185 * z_level) + 0.015, M_PI, 0.0, orientation), &joint_angles_array);
 
   std::vector<double> out;
   for (int i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
@@ -946,6 +851,19 @@ std::vector<double> UR3eController::getJointAnglesFromXYOrientation(std::vector<
   }
   return out;
 }
+
+
+// This function gets the target position and orientation of the hand based on the target joint angles
+universalRobots::pose UR3eController::getPositionOrientationFromJointAngles(std::vector<double> target_joint_angles_, double move_to_target_h_orientation_) {
+
+  float jointValues[] = { target_joint_angles_[0], target_joint_angles_[1], target_joint_angles_[2], target_joint_angles_[3], target_joint_angles_[4], target_joint_angles_[5]};
+
+  //ur_kinematics_->inverseKinematics(universalRobots::pose(xy_pos[0], xy_pos[1], (0.185 * z_level) + 0.015, M_PI, 0.0, orientation), &joint_angles_array);
+  universalRobots::pose Pos = ur_kinematics_->forwardKinematics(jointValues);
+
+  return Pos;
+}
+
 
 void UR3eController::setJointAngles(std::vector<double> joint_angles) {
   for (size_t i = 0; i < NUMBER_OF_ARM_MOTORS; ++i) {
