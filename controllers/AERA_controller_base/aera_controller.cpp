@@ -6,7 +6,7 @@ AERAController::AERAController()
   id_string_mapping_ = std::map<int, std::string>();
   string_id_mapping_ = std::map<std::string, int>();
 
-  receive_queue_ = std::make_shared<tcp_io_device::SafeQueue>(100);
+  receive_queue_ = std::make_shared<tcp_io_device::SafeQueue>(1);
   send_queue_ = std::make_shared<tcp_io_device::SafeQueue>(1);
   tcp_connection_ = std::make_shared<tcp_io_device::TCPConnection>(receive_queue_, send_queue_, 8);
 
@@ -47,12 +47,15 @@ std::map<std::string, std::map<std::string, tcp_io_device::MetaData>> AERAContro
   std::map<std::string, toml_parser::entity> entity_map = parser.entities();
   for (auto e_it = entity_map.begin(); e_it != entity_map.end(); ++e_it) {
     auto e = e_it->second;
+    std::cout << "Entity: " << e_it->first << " ID: " << string_id_mapping_[e_it->first] << std::endl;
     for (auto p_it = e.properties.begin(); p_it != e.properties.end(); ++p_it) {
       objects.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[p_it->name], p_it->data_type, p_it->dimensions, p_it->opcode_handle));
       objects_map[e_it->first].insert(std::make_pair(p_it->name, objects.back()));
+      std::cout << "Entity: " << e_it->first << " Property: " << p_it->name << " ID: " << string_id_mapping_[p_it->name] << std::endl;
     }
     for (auto c_it = e.commands.begin(); c_it != e.commands.end(); ++c_it) {
       commands.push_back(tcp_io_device::MetaData(string_id_mapping_[e_it->first], string_id_mapping_[c_it->name], c_it->data_type, c_it->dimensions, c_it->opcode_handle));
+      std::cout << "Entity: " << e_it->first << " Command: " << c_it->name << " ID: " << string_id_mapping_[c_it->name] << std::endl;
     }
   }
   sendSetupMessage(objects, commands);
@@ -180,12 +183,22 @@ void AERAController::sendDataMessage(std::vector<tcp_io_device::MsgData> msg_dat
   msg->set_messagetype(tcp_io_device::TCPMessage::DATA);
   tcp_io_device::DataMessage* data_msg = msg->mutable_datamessage();
   for (auto it = msg_data.begin(); it != msg_data.end(); ++it) {
+    //std::cout << *it << std::endl;
     tcp_io_device::ProtoVariable* var = data_msg->add_variables();
     it->toMutableProtoVariable(var);
   }
+  data_msg->set_timespan(robot_->getTime() * 1000);
   send_queue_->enqueue(std::move(msg));
 }
 
+void AERAController::sendGoalMessage(tcp_io_device::MsgData msg_data) {
+  std::unique_ptr<tcp_io_device::TCPMessage> msg = std::make_unique<tcp_io_device::TCPMessage>();
+  msg->set_messagetype(tcp_io_device::TCPMessage::GOAL);
+  tcp_io_device::GoalMessage* goal_msg = msg->mutable_goalmessage();
+  tcp_io_device::ProtoVariable* var = goal_msg->mutable_goal();
+  msg_data.toMutableProtoVariable(var);
+  send_queue_->enqueue(std::move(msg));
+}
 
 
 

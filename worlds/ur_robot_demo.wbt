@@ -55,6 +55,7 @@ DEF UR10e UR10e {
     DEF gps GPS {
       translation 0 0.21 0
       name "gps_tip"
+      accuracy 0.02
     }
     DEF gripper Robotiq3fGripper {
     }
@@ -85,7 +86,7 @@ DEF green_box RecognizableSolidBox {
   ]
 }
 DEF red_box RecognizableSolidBox {
-  translation -0.5 1 0.05
+  translation -0.5 0.7 0.05
   name "red_box"
   size 0.1 0.1 0.1
   appearance PBRAppearance {

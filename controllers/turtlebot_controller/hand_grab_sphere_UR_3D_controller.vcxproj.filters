@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="hand_grab_sphere_UR_3D_controller_main.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Accelerometer.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
@@ -101,9 +100,7 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\TouchSensor.cpp">
       <Filter>Webots</Filter>
     </ClCompile>
-    <ClCompile Include="hand_grab_sphere_UR_3D_controller.cpp" />
     <ClCompile Include="math_lib.cpp" />
-    <ClCompile Include="universal_robots_kinematics.cpp" />
     <ClCompile Include="..\..\submodules\AERA_Protobuf\tcp_connection.cpp">
       <Filter>AERA_Protobuf</Filter>
     </ClCompile>
@@ -116,6 +113,8 @@
     <ClCompile Include="..\AERA_controller_base\toml_parser.cpp">
       <Filter>AERA_controller_base</Filter>
     </ClCompile>
+    <ClCompile Include="turtlebot_controller.cpp" />
+    <ClCompile Include="turtlebot_controller_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Webots">
@@ -129,8 +128,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hand_grab_sphere_UR_3D_controller.h" />
-    <ClInclude Include="universal_robots_kinematics.h" />
     <ClInclude Include="math_lib.h" />
     <ClInclude Include="tip_camera.h" />
     <ClInclude Include="..\..\submodules\AERA_Protobuf\tcp_connection.h">
@@ -152,9 +149,9 @@
       <Filter>AERA_controller_base</Filter>
     </ClInclude>
     <ClInclude Include="str_base.h" />
+    <ClInclude Include="turtlebot_controller.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="hand_grab_sphere_UR_3D_controller.vcxproj.filter" />
     <None Include="settings.toml" />
     <None Include="..\..\submodules\AERA_Protobuf\README.md">
       <Filter>AERA_Protobuf</Filter>
@@ -162,5 +159,6 @@
     <None Include="..\..\submodules\AERA_Protobuf\tcp_data_message.proto">
       <Filter>AERA_Protobuf</Filter>
     </None>
+    <None Include="turtlebot_controller.vcxproj.filter" />
   </ItemGroup>
 </Project>

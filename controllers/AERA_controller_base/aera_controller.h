@@ -77,6 +77,8 @@ protected:
 
   void sendDataMessage(std::vector<tcp_io_device::MsgData> msg_data);
 
+  void sendGoalMessage(tcp_io_device::MsgData msg_data);
+
   virtual void handleDataMsg(std::vector<tcp_io_device::MsgData> msg_data) = 0;
 };
 

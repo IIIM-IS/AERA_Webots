@@ -17,6 +17,7 @@ PROTO RecognizableSolidBox [
   field SFBool     enableBoundingObject  TRUE                                                                                                          # Defines whether the solid should have a bounding object.
   field SFBool     castShadows           TRUE      
   field MFColor    recognitionColors     []                                                                                                  # Defines whether this object should cast shadows.
+  field MFNode     toolSlot        []           # Extend the robot with new nodes at the end of the arm.
 ]
 {
   %<

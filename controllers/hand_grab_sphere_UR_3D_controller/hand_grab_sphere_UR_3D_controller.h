@@ -7,6 +7,8 @@
 #include <webots/PositionSensor.hpp>
 #include <webots/GPS.hpp>
 #include <webots/InertialUnit.hpp>
+#include <webots/Keyboard.hpp>
+#include <webots/Mouse.hpp>
 #include "../../submodules/Eigen/Eigen/Geometry"
 
 #define NUMBER_OF_ARM_MOTORS 6
@@ -48,6 +50,9 @@ protected:
 
   TipCamera* tip_camera_;
 
+  webots::Keyboard* keyboard_;
+  webots::Mouse* mouse_;
+
   webots::Node* boxes_[NUMBER_OF_BOXES];
 
   universalRobots::UR* ur_kinematics_;
@@ -58,6 +63,8 @@ protected:
   int receive_cmd_time_;
 
   int max_exec_time_steps_;
+
+  double last_msg_sent_time_;
 
   const std::map<std::string, int> execution_times_map_ = { {"move", 10'000}, {"grab", 1'500}, {"release", 1'500}, {"default", 10'000} };
 
@@ -70,13 +77,14 @@ protected:
 
 private:
 
-  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, ROTATE_HAND, CLOSE_GRIPPER, OPEN_GRIPPER, MEASURING, STOPPING };
+  enum State { STARTING, IDLE, MOVE_DOWN_CLOSE, MOVE_DOWN_OPEN, MOVE_UP, MOVE_ARM, ROTATE_HAND, CLOSE_GRIPPER, OPEN_GRIPPER, OPEN_GRIPPER_SAFE, MEASURING, STOPPING };
   enum MeasurementState {NONE, MEASURE_HAND};
 
   State state_;
   MeasurementState measurement_state_;
 
   std::vector<double> hand_xyz_pos_;
+  std::vector<double> last_sent_hand_xyz_pos_;
   std::vector<double> target_h_position_;
   std::vector<double> target_joint_angles_;
   std::vector<double> hand_closed_values_;
@@ -88,13 +96,23 @@ private:
   const double position_accuracy_error_ = 0.01;
   const double gripper_accuracy_error_ = 0.05;
 
+  std::default_random_engine generator_;
+
+  communication_id_t holding_id_;
+
+  bool mouse_pressed_;
+
   void executeCommand();
+
+  tcp_io_device::MsgData acceptNewUserInput();
 
   std::vector<double> getJointAnglesFromXY(std::vector<double> xy_pos, int z_level);
 
   void setJointAngles(std::vector<double> joint_angles);
 
   void setHandAngles(std::vector<double> hand_values);
+
+  std::vector<double> add_gaussian_noise(std::vector<double> values, double std_dev);
 
   static void get_random_box_positions(double positions[NUMBER_OF_BOXES][3]) {
     auto time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -131,18 +149,33 @@ private:
     }
   }
 
-  static std::vector<double> getRoundedXYPosition(const double* pos_array, int decimal_places = 1) {
+  static std::vector<double> getRoundedXYPosition(const double* pos_array, int decimal_places = 2) {
     std::vector<double> out;
     out.push_back(round(pos_array[0] * pow(10., decimal_places)) / pow(10., decimal_places));
     out.push_back(round(pos_array[1] * pow(10., decimal_places)) / pow(10., decimal_places));
     return out;
   }
 
-  static std::vector<double> getRoundedXYZPosition(const double* pos_array, int decimal_places = 1) {
+  static std::vector<double> getRoundedXYZPosition(const double* pos_array, int decimal_places = 2) {
     std::vector<double> out;
     out.push_back(round(pos_array[0] * pow(10., decimal_places)) / pow(10., decimal_places));
     out.push_back(round(pos_array[1] * pow(10., decimal_places)) / pow(10., decimal_places));
     out.push_back(round(pos_array[2] * pow(10., decimal_places)) / pow(10., decimal_places));
+    return out;
+  }
+
+  static std::vector<double> add_gaussian_noise(std::vector<double> values, std::vector<double> std_devs) {
+    if (values.size() != std_devs.size()) {
+      return values;
+    }
+
+    std::default_random_engine generator;
+    std::vector<double> out;
+    for (size_t i = 0; i < values.size(); i++)
+    {
+      std::normal_distribution<double> distribution(values[i], std_devs[i]);
+      out.push_back(distribution(generator));
+    }
     return out;
   }
 };

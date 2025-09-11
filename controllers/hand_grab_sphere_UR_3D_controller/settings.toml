@@ -1,6 +1,5 @@
 title = "UR Demo"
 
-
 [[entities]]
 name = "h"
 properties = [ "position", "rotation", "holding" ]
@@ -19,6 +18,11 @@ properties = [ "position", "rotation" ]
 name = "b_2"
 properties = [ "position", "rotation" ]
 
+[[properties]]
+name = "measurement"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
 
 [[properties]]
 name = "position"

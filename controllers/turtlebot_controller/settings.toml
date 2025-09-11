@@ -1,0 +1,31 @@
+title = "Turtlebot Demo"
+
+[[entities]]
+name = "bot"
+properties = ["position", "rotation"]
+commands = ["move", "rotate"]
+
+[[properties]]
+name = "position"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[properties]]
+name = "rotation"
+type = "double"
+dimensionality = [4]
+opcode_handle = "quat"
+
+
+[[commands]]
+name = "move"
+type = "double"
+dimensionality = [3]
+opcode_handle = "vec3"
+
+[[commands]]
+name = "rotate"
+type = "double"
+dimensionality = [4]
+opcode_handle = "quat"
