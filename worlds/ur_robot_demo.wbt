@@ -60,30 +60,6 @@ DEF UR10e UR10e {
     }
   ]
 }
-DEF green_box RecognizableSolidBox {
-  translation 0 1 0.05
-  name "green_box"
-  size 0.1 0.1 0.1
-  appearance PBRAppearance {
-    baseColor 0 1 0
-    roughness 0.5
-    metalness 0.5
-  }
-  physics Physics {
-    density -1
-    mass 0.1
-    centerOfMass [
-      0 0 0
-    ]
-    inertiaMatrix [
-      0.0016666666666666674 0.0016666666666666674 0.0016666666666666674
-      0 0 0
-    ]
-  }
-  recognitionColors [
-    0 1 0
-  ]
-}
 DEF red_box RecognizableSolidBox {
   translation -0.5 1 0.05
   name "red_box"
@@ -131,4 +107,52 @@ DEF blue_box RecognizableSolidBox {
   recognitionColors [
     0 0 1
   ]
+}
+DEF green_sphere_with_base Solid {
+  translation 0 1 0.05
+  children [
+    DEF G0 Group {
+      children [
+        Transform {
+          translation 0 0 -0.045
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0 1 0
+                roughness 0.5
+                metalness 0.5
+              }
+              geometry Cylinder {
+                height 0.01
+                radius 0.05
+              }
+            }
+          ]
+        }
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 1 0
+            roughness 0.5
+            metalness 0.5
+          }
+          geometry Sphere {
+            radius 0.05
+            subdivision 2
+          }
+        }
+      ]
+    }
+  ]
+  boundingObject USE G0
+  physics Physics {
+    density -1
+    mass 0.5
+    centerOfMass [
+      0 0 0
+    ]
+    inertiaMatrix [
+      0.00166667 0.00166667 0.00166667
+      0 0 0
+    ]
+  }
 }
