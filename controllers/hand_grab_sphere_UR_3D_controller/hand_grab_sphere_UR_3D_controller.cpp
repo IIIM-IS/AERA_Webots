@@ -39,7 +39,7 @@ UR3eController::UR3eController() : AERAController() {
   hand_sensors_[2] = robot_->getPositionSensor("finger_middle_joint_1_sensor");
 
   boxes_[0] = robot_->getFromDef("red_box");
-  boxes_[1] = robot_->getFromDef("green_box");
+  boxes_[1] = robot_->getFromDef("green_sphere_with_base");
   boxes_[2] = robot_->getFromDef("blue_box");
 
 
